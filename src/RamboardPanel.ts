@@ -121,8 +121,9 @@ export class RamboardPanel {
     html = html.replace(
       /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
       (_match, href: string) => {
-        const uri = webview.asWebviewUri(vscode.Uri.joinPath(vendor, href.replace(/^\//, "")));
-        return `<link rel="stylesheet" crossorigin href="${uri}">`;
+        const cssPath = join(vendor.fsPath, href.replace(/^\//, ""));
+        const css = existsSync(cssPath) ? readFileSync(cssPath, "utf8") : "";
+        return `<style nonce="${n}">${css}</style>`;
       },
     );
     html = html.replace(
