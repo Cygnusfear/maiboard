@@ -1,7 +1,7 @@
 {
   "name": "maiboard",
   "displayName": "Maiboard",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Maitake workbench for VS Code, powered by Ramboard.",
   "categories": [
     "Other"
@@ -85,7 +85,8 @@
     "onCommand:maiboard.openTicket",
     "onCommand:maiboard.openTickets",
     "onCommand:maiboard.refreshRamboardAssets",
-    "onCommand:maiboard.startReview"
+    "onCommand:maiboard.startReview",
+    "onWebviewPanel:maiboard.ramboard"
   ],
   "engines": {
     "vscode": "^1.110.0"

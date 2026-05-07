@@ -19,6 +19,18 @@ function bridgeScript(route: string): string {
   const pending = new Map();
   let seq = 1;
   try { history.replaceState(null, '', initialRoute); } catch {}
+  function persistState() {
+    try {
+      vscode.setState({ route: location.pathname + location.search + location.hash });
+    } catch {}
+  }
+  persistState();
+  const _origPush = history.pushState.bind(history);
+  const _origReplace = history.replaceState.bind(history);
+  history.pushState = function (...args) { const r = _origPush(...args); persistState(); return r; };
+  history.replaceState = function (...args) { const r = _origReplace(...args); persistState(); return r; };
+  window.addEventListener('popstate', persistState);
+  window.addEventListener('hashchange', persistState);
   window.__MAIBOARD__ = { initialRoute, vscode };
   window.addEventListener('message', (event) => {
     const message = event.data || {};
@@ -125,6 +137,15 @@ export class RamboardPanel {
     );
     this.startWatching();
     this.render();
+  }
+
+  static restore(
+    context: vscode.ExtensionContext,
+    api: RamboardApi,
+    panel: vscode.WebviewPanel,
+    state: PanelState,
+  ): RamboardPanel {
+    return new RamboardPanel(panel, context, api, state);
   }
 
   static open(

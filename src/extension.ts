@@ -5,6 +5,16 @@ import { fileURLToPath } from "node:url";
 import { RamboardApi } from "./RamboardApi.ts";
 import { RamboardPanel } from "./RamboardPanel.ts";
 
+function titleForRoute(route: string): string {
+  const reviewMatch = route.match(/\/review\/([^/?#]+)/);
+  if (reviewMatch?.[1]) return `Maitake Review ${decodeURIComponent(reviewMatch[1])}`;
+  const ticketMatch = route.match(/\/ticket\/([^/?#]+)/);
+  if (ticketMatch?.[1]) return `Maitake ${decodeURIComponent(ticketMatch[1])}`;
+  if (route.includes("status-board") || route.endsWith("/board")) return "Maitake Board";
+  if (route.includes("/view/")) return "Maitake Tickets";
+  return "Maitake";
+}
+
 function firstColumn(): vscode.ViewColumn {
   return vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
 }
@@ -101,6 +111,21 @@ export function activate(context: vscode.ExtensionContext): void {
       rmSync(target, { recursive: true, force: true });
       cpSync(source, target, { recursive: true });
       vscode.window.showInformationMessage("Refreshed Ramboard assets.");
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer("maiboard.ramboard", {
+      async deserializeWebviewPanel(panel, state) {
+        const persisted =
+          state && typeof state === "object" && "route" in state
+            ? (state as { route?: unknown }).route
+            : undefined;
+        const route =
+          typeof persisted === "string" && persisted.length > 0 ? persisted : api.routeFor("board");
+        panel.title = titleForRoute(route);
+        RamboardPanel.restore(context, api, panel, { route, title: panel.title });
+      },
     }),
   );
 }
