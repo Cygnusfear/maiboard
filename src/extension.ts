@@ -4,6 +4,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RamboardApi } from "./RamboardApi.ts";
 import { RamboardPanel } from "./RamboardPanel.ts";
+import {
+  clearDecorations,
+  handleMaiSave,
+  maiCommentListCommand,
+  maiCommentResolveCommand,
+  updateDecorations,
+} from "./maiComments.ts";
 
 function titleForRoute(route: string): string {
   const reviewMatch = route.match(/\/review\/([^/?#]+)/);
@@ -115,6 +122,20 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("maiboard.maiCommentList", maiCommentListCommand),
+    vscode.commands.registerCommand("maiboard.maiCommentResolve", maiCommentResolveCommand),
+    vscode.workspace.onDidSaveTextDocument(handleMaiSave),
+    vscode.window.onDidChangeActiveTextEditor(async (editor) => {
+      if (editor) await updateDecorations(editor);
+    }),
+  );
+
+  // Initial decoration pass for already-visible editors
+  for (const editor of vscode.window.visibleTextEditors) {
+    void updateDecorations(editor);
+  }
+
+  context.subscriptions.push(
     vscode.window.registerWebviewPanelSerializer("maiboard.ramboard", {
       async deserializeWebviewPanel(panel, state) {
         const persisted =
@@ -130,4 +151,6 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
-export function deactivate(): void {}
+export function deactivate(): void {
+  clearDecorations();
+}

@@ -1,7 +1,7 @@
 {
   "name": "maiboard",
   "displayName": "Maiboard",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Maitake workbench for VS Code, powered by Ramboard.",
   "categories": [
     "Other"
@@ -66,6 +66,14 @@
         "command": "maiboard.openReview",
         "title": "Open Review",
         "category": "Maitake"
+      },
+      {
+        "command": "maiboard.maiCommentList",
+        "title": "Maitake: List @mai: Tickets"
+      },
+      {
+        "command": "maiboard.maiCommentResolve",
+        "title": "Maitake: Resolve @mai: at Cursor"
       }
     ],
     "keybindings": [
@@ -81,11 +89,7 @@
     ]
   },
   "activationEvents": [
-    "onCommand:maiboard.openBoard",
-    "onCommand:maiboard.openTicket",
-    "onCommand:maiboard.openTickets",
-    "onCommand:maiboard.refreshRamboardAssets",
-    "onCommand:maiboard.startReview",
+    "onStartupFinished",
     "onWebviewPanel:maiboard.ramboard"
   ],
   "engines": {
