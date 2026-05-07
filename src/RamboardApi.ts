@@ -338,20 +338,11 @@ export class RamboardApi {
       const payload = (body ?? {}) as { kind?: string; message?: string };
       const kind = payload.kind === "request" ? "request" : "approve";
       const message = String(payload.message ?? "").trim();
-      const ticket = await maiJson<{ kind?: string }>(projectPath, ["show", ticketId]);
-      const isPr = ticket?.kind === "pr";
-      let result: { exitCode: number; stderr: string };
-      if (isPr) {
-        const args = kind === "approve" ? ["pr", "accept", ticketId] : ["pr", "reject", ticketId];
-        if (message) args.push("-m", message);
-        result = await mai(projectPath, args);
-      } else {
-        const note =
-          kind === "approve"
-            ? "Approved" + (message ? ": " + message : "")
-            : "Changes requested" + (message ? ": " + message : "");
-        result = await mai(projectPath, ["add-note", ticketId, note]);
-      }
+      const note =
+        kind === "approve"
+          ? "Approved" + (message ? ": " + message : "")
+          : "Changes requested" + (message ? ": " + message : "");
+      const result = await mai(projectPath, ["add-note", ticketId, note]);
       if (result.exitCode !== 0)
         return { status: 500, body: { error: result.stderr || "verdict failed" } };
       return { status: 200, body: { ok: true } };
@@ -404,21 +395,15 @@ export class RamboardApi {
     if (!project) throw new Error("no workspace folder open");
     const projectPath = project.path;
 
-    const refs = await getRefs(projectPath);
-    const current = refs.currentBranch;
-    const def = refs.defaultBranch;
-
-    let result;
-    if (current && def && current !== def) {
-      const title = `Review ${current} → ${def}`;
-      result = await mai(projectPath, ["pr", title, "--into", def, "--json"]);
-    } else {
-      const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
-      const title = `Review ${stamp}`;
-      result = await mai(projectPath, ["review", title, "--json"]);
-    }
+    const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
+    const refs = await getRefs(projectPath).catch(
+      () => ({ currentBranch: null }) as { currentBranch: string | null },
+    );
+    const branch = refs.currentBranch;
+    const title = branch ? `Review ${branch} ${stamp}` : `Review ${stamp}`;
+    const result = await mai(projectPath, ["review", title, "--json"]);
     if (result.exitCode !== 0) {
-      throw new Error(result.stderr.trim() || "mai create failed");
+      throw new Error(result.stderr.trim() || "mai review failed");
     }
 
     const id = parseTicketId(result.stdout);
