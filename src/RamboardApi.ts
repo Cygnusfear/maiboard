@@ -33,6 +33,21 @@ function hashPath(path: string): string {
   return createHash("sha1").update(path).digest("hex").slice(0, 8);
 }
 
+function parseTicketId(output: string): string | null {
+  const text = output.trim();
+  if (!text) return null;
+  if (text.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(text) as { id?: unknown };
+      if (typeof parsed.id === "string" && parsed.id.length > 0) return parsed.id;
+    } catch {
+      // fall through
+    }
+  }
+  const match = text.match(/[a-z][a-z0-9-]+-[a-z0-9]{3,}/i);
+  return match ? match[0] : null;
+}
+
 function projectIdForPath(path: string): string {
   return (
     basename(path)
@@ -300,6 +315,43 @@ export class RamboardApi {
     }
 
     return { status: 404, body: { error: `No Maiboard API route for ${method} ${path}` } };
+  }
+
+  /**
+   * Create a review-shaped ticket for the current workspace.
+   *
+   * Picks `mai pr "title" --into <defaultBranch>` when the current branch
+   * differs from the default branch, otherwise falls back to a generic
+   * `mai review "title"`. Starts the ticket so it shows up as in_progress.
+   * Returns the new ticket id, or throws if creation failed.
+   */
+  async createReviewTicket(): Promise<string> {
+    const project = this.projects()[0];
+    if (!project) throw new Error("no workspace folder open");
+    const projectPath = project.path;
+
+    const refs = await getRefs(projectPath);
+    const current = refs.currentBranch;
+    const def = refs.defaultBranch;
+
+    let result;
+    if (current && def && current !== def) {
+      const title = `Review ${current} → ${def}`;
+      result = await mai(projectPath, ["pr", title, "--into", def, "--json"]);
+    } else {
+      const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
+      const title = `Review ${stamp}`;
+      result = await mai(projectPath, ["review", title, "--json"]);
+    }
+    if (result.exitCode !== 0) {
+      throw new Error(result.stderr.trim() || "mai create failed");
+    }
+
+    const id = parseTicketId(result.stdout);
+    if (!id) throw new Error("could not parse new ticket id from mai output");
+
+    await mai(projectPath, ["start", id]);
+    return id;
   }
 
   private async updateTicket(

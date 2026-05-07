@@ -58,14 +58,28 @@ export function activate(context: vscode.ExtensionContext): void {
       );
     }),
     vscode.commands.registerCommand("maiboard.startReview", async (arg?: unknown) => {
-      const id =
-        normalizeTicketArg(arg) ??
-        (await vscode.window.showInputBox({
-          title: "Review Maitake Ticket",
-          prompt: "Ticket ID to review (PR or review ticket)",
-          placeHolder: "pv-mrhs",
-        }));
-      if (!id) return;
+      const explicit = normalizeTicketArg(arg);
+      let id: string | undefined = explicit;
+      if (!id) {
+        const entered = await vscode.window.showInputBox({
+          title: "Start review",
+          prompt: "Ticket ID — leave empty to create one for the current branch",
+          placeHolder: "pv-mrhs (or empty to auto-create)",
+        });
+        if (entered === undefined) return; // user dismissed
+        id = entered.trim();
+      }
+      if (!id) {
+        try {
+          id = await api.createReviewTicket();
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            `Could not create review ticket: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          return;
+        }
+        vscode.window.showInformationMessage(`Created review ticket ${id}.`);
+      }
       RamboardPanel.open(
         context,
         api,
