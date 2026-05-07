@@ -209,9 +209,15 @@ export class RamboardPanel {
     id?: number;
     command?: string;
     request?: { method: string; url: string; body?: string };
+    projectId?: string;
+    path?: string;
   }): Promise<void> {
     if (message.type === "maiboard.command") {
       await this.executeWorkbenchCommand(message.command);
+      return;
+    }
+    if (message.type === "maiboard.openFile") {
+      await this.openProjectFile(message);
       return;
     }
     if (message.type !== "maiboard.api" || !message.request || typeof message.id !== "number")
@@ -234,6 +240,25 @@ export class RamboardPanel {
         id: message.id,
         error: error instanceof Error ? error.message : String(error),
       });
+    }
+  }
+
+  private async openProjectFile(message: { projectId?: string; path?: string }): Promise<void> {
+    if (!message.projectId || !message.path) return;
+    const projectPath = this.api.projectPath(message.projectId);
+    if (!projectPath) {
+      vscode.window.showErrorMessage(`Maiboard: project ${message.projectId} not found`);
+      return;
+    }
+    const fileUri = vscode.Uri.joinPath(vscode.Uri.file(projectPath), message.path);
+    try {
+      await vscode.commands.executeCommand("vscode.open", fileUri, {
+        viewColumn: vscode.ViewColumn.Beside,
+        preserveFocus: false,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`Maiboard: cannot open ${message.path} - ${detail}`);
     }
   }
 
