@@ -162,7 +162,7 @@ export class RamboardPanel {
       /<script type="module" crossorigin src="([^"]+)"><\/script>/g,
       (_match, src: string) => {
         const uri = webview.asWebviewUri(vscode.Uri.joinPath(vendor, src.replace(/^\//, "")));
-        return `<script nonce="${n}" type="module" crossorigin src="${uri}"></script>`;
+        return `<script nonce="${n}" type="module" src="${uri}"></script>`;
       },
     );
     html = html.replace(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi, (tag: string) => {
