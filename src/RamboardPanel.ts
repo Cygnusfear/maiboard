@@ -50,6 +50,50 @@ function bridgeScript(route: string): string {
   }
   window.__nativeFetch = window.fetch.bind(window);
   window.fetch = apiFetch;
+  function canScrollY(el, delta) {
+    if (!el) return false;
+    const max = el.scrollHeight - el.clientHeight;
+    if (max <= 1) return false;
+    return delta > 0 ? el.scrollTop < max - 1 : el.scrollTop > 1;
+  }
+  function canScrollX(el, delta) {
+    if (!el) return false;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 1) return false;
+    return delta > 0 ? el.scrollLeft < max - 1 : el.scrollLeft > 1;
+  }
+  function scrollableByStyle(el, axis) {
+    if (el === document.scrollingElement) return true;
+    const style = getComputedStyle(el);
+    const overflow = axis === 'x' ? style.overflowX : style.overflowY;
+    return /auto|scroll|overlay/.test(overflow);
+  }
+  window.addEventListener('wheel', (event) => {
+    if (event.defaultPrevented || event.ctrlKey) return;
+    const start = event.target instanceof Element
+      ? event.target
+      : document.elementFromPoint(event.clientX, event.clientY);
+    const candidates = [];
+    for (let el = start; el; el = el.parentElement) candidates.push(el);
+    if (document.scrollingElement) candidates.push(document.scrollingElement);
+
+    const preferX = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
+    const axes = preferX ? ['x', 'y'] : ['y', 'x'];
+    for (const axis of axes) {
+      const delta = axis === 'x' ? (event.deltaX || event.deltaY) : event.deltaY;
+      if (!delta) continue;
+      for (const el of candidates) {
+        if (!(el instanceof Element) || !scrollableByStyle(el, axis)) continue;
+        if (axis === 'x' ? canScrollX(el, delta) : canScrollY(el, delta)) {
+          if (axis === 'x') el.scrollLeft += delta;
+          else el.scrollTop += delta;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+      }
+    }
+  }, { passive: false });
 })();`;
 }
 
