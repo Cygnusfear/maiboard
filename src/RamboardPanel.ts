@@ -118,17 +118,16 @@ export class RamboardPanel {
         return `<script nonce="${n}" type="module" crossorigin src="${uri}"></script>`;
       },
     );
-    html = html.replace(
-      /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
-      (_match, href: string) => {
-        const cssPath = join(vendor.fsPath, href.replace(/^\//, ""));
-        const css = existsSync(cssPath) ? readFileSync(cssPath, "utf8") : "";
-        return `<style nonce="${n}">${css}</style>`;
-      },
-    );
+    html = html.replace(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi, (tag: string) => {
+      const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1];
+      if (!href || !href.startsWith("/")) return tag;
+      const cssPath = join(vendor.fsPath, href.replace(/^\//, ""));
+      const css = existsSync(cssPath) ? readFileSync(cssPath, "utf8") : "";
+      return `<style nonce="${n}">${css}</style>`;
+    });
     html = html.replace(
       "<head>",
-      `<head>\n<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src ${webview.cspSource} 'nonce-${n}'; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src ${webview.cspSource} https://fonts.gstatic.com data:; connect-src ${webview.cspSource} https:;">`,
+      `<head>\n<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src ${webview.cspSource} 'nonce-${n}'; style-src ${webview.cspSource} 'nonce-${n}' 'unsafe-inline' https://fonts.googleapis.com; font-src ${webview.cspSource} https://fonts.gstatic.com data:; connect-src ${webview.cspSource} https:;">`,
     );
     html = html.replace(
       '<body class="bg-zinc-950 text-zinc-100 antialiased">',
