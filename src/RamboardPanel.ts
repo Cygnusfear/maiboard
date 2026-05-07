@@ -60,6 +60,24 @@ function bridgeScript(route: string): string {
     const overflow = getComputedStyle(el).overflowY;
     return /auto|scroll|overlay/.test(overflow);
   }
+  function workbenchCommandForKey(event) {
+    const mod = event.metaKey || event.ctrlKey;
+    if (!mod || event.altKey) return null;
+    const key = event.key.toLowerCase();
+    if (key === 'w' && !event.shiftKey) return 'workbench.action.closeActiveEditor';
+    if (key === 'w' && event.shiftKey) return 'workbench.action.closeWindow';
+    if (key === 'p' && !event.shiftKey) return 'workbench.action.quickOpen';
+    if (key === 'p' && event.shiftKey) return 'workbench.action.showCommands';
+    if (/^[1-9]$/.test(key) && !event.shiftKey) return 'workbench.action.openEditorAtIndex' + key;
+    return null;
+  }
+  window.addEventListener('keydown', (event) => {
+    const command = workbenchCommandForKey(event);
+    if (!command) return;
+    event.preventDefault();
+    event.stopPropagation();
+    vscode.postMessage({ type: 'maiboard.command', command });
+  }, true);
   window.addEventListener('wheel', (event) => {
     if (event.defaultPrevented || event.ctrlKey || !event.deltaY) return;
     const start = event.target instanceof Element
@@ -168,8 +186,13 @@ export class RamboardPanel {
   private async handleMessage(message: {
     type?: string;
     id?: number;
+    command?: string;
     request?: { method: string; url: string; body?: string };
   }): Promise<void> {
+    if (message.type === "maiboard.command") {
+      await this.executeWorkbenchCommand(message.command);
+      return;
+    }
     if (message.type !== "maiboard.api" || !message.request || typeof message.id !== "number")
       return;
     try {
@@ -191,6 +214,26 @@ export class RamboardPanel {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  private async executeWorkbenchCommand(command: string | undefined): Promise<void> {
+    const allowed = new Set([
+      "workbench.action.closeActiveEditor",
+      "workbench.action.closeWindow",
+      "workbench.action.quickOpen",
+      "workbench.action.showCommands",
+      "workbench.action.openEditorAtIndex1",
+      "workbench.action.openEditorAtIndex2",
+      "workbench.action.openEditorAtIndex3",
+      "workbench.action.openEditorAtIndex4",
+      "workbench.action.openEditorAtIndex5",
+      "workbench.action.openEditorAtIndex6",
+      "workbench.action.openEditorAtIndex7",
+      "workbench.action.openEditorAtIndex8",
+      "workbench.action.openEditorAtIndex9",
+    ]);
+    if (!command || !allowed.has(command)) return;
+    await vscode.commands.executeCommand(command);
   }
 
   private startWatching(): void {
