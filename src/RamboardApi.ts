@@ -33,6 +33,49 @@ function hashPath(path: string): string {
   return createHash("sha1").update(path).digest("hex").slice(0, 8);
 }
 
+interface ParsedReviewNote {
+  timestamp: string;
+  content: string;
+}
+
+const NOTE_TS_RE = /^\*\*(\d{4}-\d{2}-\d{2}T[\d:.]+Z?)\*\*$/;
+
+function rewriteNotesSection(
+  body: string,
+  mutate: (notes: ParsedReviewNote[]) => ParsedReviewNote[],
+): string | null {
+  const notesIdx = body.indexOf("## Notes");
+  if (notesIdx === -1) return null;
+  const headerEnd = notesIdx + "## Notes".length;
+  const afterNotes = body.slice(headerEnd);
+  const nextSectionMatch = afterNotes.match(/\n## [^#]/);
+  const notesBlock = nextSectionMatch ? afterNotes.slice(0, nextSectionMatch.index!) : afterNotes;
+  const tail = nextSectionMatch ? afterNotes.slice(nextSectionMatch.index!) : "";
+
+  const lines = notesBlock.split("\n");
+  const notes: ParsedReviewNote[] = [];
+  let cur: { timestamp: string; lines: string[] } | null = null;
+  for (const line of lines) {
+    const match = line.match(NOTE_TS_RE);
+    if (match) {
+      if (cur) notes.push({ timestamp: cur.timestamp, content: cur.lines.join("\n").trim() });
+      cur = { timestamp: match[1] ?? "", lines: [] };
+    } else if (cur) {
+      cur.lines.push(line);
+    }
+  }
+  if (cur) notes.push({ timestamp: cur.timestamp, content: cur.lines.join("\n").trim() });
+
+  const updated = mutate(notes);
+  let emitted = "\n";
+  for (const note of updated) {
+    emitted += "\n**" + note.timestamp + "**\n\n" + note.content + "\n";
+  }
+  emitted += "\n";
+
+  return body.slice(0, headerEnd) + emitted + tail;
+}
+
 function parseTicketId(output: string): string | null {
   const text = output.trim();
   if (!text) return null;
@@ -314,6 +357,37 @@ export class RamboardApi {
       return { status: 200, body: { ok: true } };
     }
 
+    const reviewEditMatch = path.match(
+      /^\/api\/projects\/([^/]+)\/tickets\/([^/]+)\/review\/comments\/edit$/,
+    );
+    if (method === "POST" && reviewEditMatch?.[1] && reviewEditMatch[2]) {
+      const projectPath = this.projectPath(reviewEditMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const ticketId = decodeURIComponent(reviewEditMatch[2]);
+      const payload = (body ?? {}) as { timestamp?: string; body?: string };
+      if (!payload.timestamp || typeof payload.body !== "string")
+        return { status: 400, body: { error: "timestamp and body required" } };
+      const ok = await this.editReviewNote(projectPath, ticketId, payload.timestamp, payload.body);
+      return ok
+        ? { status: 200, body: { ok: true } }
+        : { status: 500, body: { error: "edit failed" } };
+    }
+
+    const reviewDeleteMatch = path.match(
+      /^\/api\/projects\/([^/]+)\/tickets\/([^/]+)\/review\/comments\/delete$/,
+    );
+    if (method === "POST" && reviewDeleteMatch?.[1] && reviewDeleteMatch[2]) {
+      const projectPath = this.projectPath(reviewDeleteMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const ticketId = decodeURIComponent(reviewDeleteMatch[2]);
+      const payload = (body ?? {}) as { timestamp?: string };
+      if (!payload.timestamp) return { status: 400, body: { error: "timestamp required" } };
+      const ok = await this.deleteReviewNote(projectPath, ticketId, payload.timestamp);
+      return ok
+        ? { status: 200, body: { ok: true } }
+        : { status: 500, body: { error: "delete failed" } };
+    }
+
     return { status: 404, body: { error: `No Maiboard API route for ${method} ${path}` } };
   }
 
@@ -386,5 +460,35 @@ export class RamboardApi {
     }
 
     return results.every(Boolean);
+  }
+  private async editReviewNote(
+    projectPath: string,
+    ticketId: string,
+    timestamp: string,
+    newBody: string,
+  ): Promise<boolean> {
+    const ticket = await maiJson<{ body?: string }>(projectPath, ["show", ticketId]);
+    if (!ticket?.body) return false;
+    const updated = rewriteNotesSection(ticket.body, (notes) =>
+      notes.map((note) => (note.timestamp === timestamp ? { ...note, content: newBody } : note)),
+    );
+    if (!updated) return false;
+    const result = await mai(projectPath, ["edit", ticketId, "-d", updated]);
+    return result.exitCode === 0;
+  }
+
+  private async deleteReviewNote(
+    projectPath: string,
+    ticketId: string,
+    timestamp: string,
+  ): Promise<boolean> {
+    const ticket = await maiJson<{ body?: string }>(projectPath, ["show", ticketId]);
+    if (!ticket?.body) return false;
+    const updated = rewriteNotesSection(ticket.body, (notes) =>
+      notes.filter((note) => note.timestamp !== timestamp),
+    );
+    if (!updated) return false;
+    const result = await mai(projectPath, ["edit", ticketId, "-d", updated]);
+    return result.exitCode === 0;
   }
 }
