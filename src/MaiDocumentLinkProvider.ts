@@ -1,0 +1,35 @@
+/**
+ * Document link provider for `[mai-ticket-id]` references.
+ *
+ * Matches `[xx-yyyyy]` patterns (lowercase 2-4 letter prefix, hyphen, 4-8
+ * alphanumeric) anywhere in any text document and turns them into Cmd/Alt-
+ * clickable links that run `maiboard.openTicket` with the matched id.
+ *
+ * Selector "*" so this works in source files, markdown, plain text, mai notes,
+ * and any other text doc — same behavior pi-vscode used to have.
+ */
+
+import * as vscode from "vscode";
+
+const MAI_TICKET_RE = /\[([a-z]{2,4}-[a-z0-9]{4,8})\]/g;
+
+export class MaiDocumentLinkProvider implements vscode.DocumentLinkProvider {
+  provideDocumentLinks(document: vscode.TextDocument): vscode.DocumentLink[] {
+    const text = document.getText();
+    const links: vscode.DocumentLink[] = [];
+    for (const match of text.matchAll(MAI_TICKET_RE)) {
+      const ticketId = match[1];
+      if (!ticketId || match.index === undefined) continue;
+      const start = document.positionAt(match.index);
+      const end = document.positionAt(match.index + match[0].length);
+      const args = encodeURIComponent(JSON.stringify([{ id: ticketId }]));
+      const link = new vscode.DocumentLink(
+        new vscode.Range(start, end),
+        vscode.Uri.parse("command:maiboard.openTicket?" + args),
+      );
+      link.tooltip = "Open mai ticket " + ticketId;
+      links.push(link);
+    }
+    return links;
+  }
+}

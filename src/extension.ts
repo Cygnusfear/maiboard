@@ -11,6 +11,7 @@ import {
   maiCommentResolveCommand,
   updateDecorations,
 } from "./maiComments.ts";
+import { MaiDocumentLinkProvider } from "./MaiDocumentLinkProvider.ts";
 
 function titleForRoute(route: string): string {
   const reviewMatch = route.match(/\/review\/([^/?#]+)/);
@@ -125,6 +126,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("maiboard.maiCommentList", maiCommentListCommand),
     vscode.commands.registerCommand("maiboard.maiCommentResolve", maiCommentResolveCommand),
     vscode.workspace.onDidSaveTextDocument(handleMaiSave),
+    vscode.languages.registerDocumentLinkProvider(
+      { scheme: "file" },
+      new MaiDocumentLinkProvider(),
+    ),
     vscode.window.onDidChangeActiveTextEditor(async (editor) => {
       if (editor) await updateDecorations(editor);
     }),
