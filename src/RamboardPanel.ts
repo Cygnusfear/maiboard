@@ -195,7 +195,7 @@ export class RamboardPanel {
     });
     html = html.replace(
       "<head>",
-      `<head>\n<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src ${webview.cspSource} 'nonce-${n}'; style-src ${webview.cspSource} 'nonce-${n}' 'unsafe-inline' https://fonts.googleapis.com; font-src ${webview.cspSource} https://fonts.gstatic.com data:; connect-src ${webview.cspSource} https:;">`,
+      `<head>\n<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src ${webview.cspSource} 'nonce-${n}'; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src ${webview.cspSource} https://fonts.gstatic.com data:; connect-src ${webview.cspSource} https:;">`,
     );
     html = html.replace(
       '<body class="bg-zinc-950 text-zinc-100 antialiased">',
