@@ -1,0 +1,88 @@
+{
+  "name": "maiboard",
+  "displayName": "Maiboard",
+  "version": "0.0.1",
+  "description": "Maitake workbench for VS Code, powered by Ramboard.",
+  "categories": [
+    "Other"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pi0/maiboard"
+  },
+  "publisher": "pi0",
+  "files": [
+    "dist",
+    "vendor/ramboard",
+    "README.md",
+    "LICENSE.txt",
+    "package.json"
+  ],
+  "type": "module",
+  "main": "./dist/extension.cjs",
+  "scripts": {
+    "build": "rolldown -c rolldown.config.ts",
+    "dev": "rolldown -c rolldown.config.ts -w",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "fmt": "oxlint src rolldown.config.ts --fix && oxfmt src rolldown.config.ts package.json tsconfig.json README.md",
+    "lint": "oxlint src rolldown.config.ts && oxfmt --check src rolldown.config.ts package.json tsconfig.json README.md",
+    "package": "pnpm build && pnpx @vscode/vsce package --no-dependencies",
+    "refresh-ramboard": "rm -rf vendor/ramboard && mkdir -p vendor/ramboard && cp -R ../ramboard/dist/. vendor/ramboard/"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.110.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260320.1",
+    "@vscode/vsce": "^3.7.1",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
+    "rolldown": "^1.0.0-rc.10",
+    "typescript": "^5.9.3"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "maiboard.openBoard",
+        "title": "Maitake: Open Board"
+      },
+      {
+        "command": "maiboard.openTickets",
+        "title": "Maitake: Open Tickets"
+      },
+      {
+        "command": "maiboard.openTicket",
+        "title": "Maitake: Open Ticket"
+      },
+      {
+        "command": "maiboard.startReview",
+        "title": "Maitake: Start Review"
+      },
+      {
+        "command": "maiboard.refreshRamboardAssets",
+        "title": "Maitake: Refresh Ramboard Assets"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "maiboard.openTicket",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      },
+      {
+        "command": "maiboard.startReview",
+        "key": "ctrl+shift+r"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onCommand:maiboard.openBoard",
+    "onCommand:maiboard.openTicket",
+    "onCommand:maiboard.openTickets",
+    "onCommand:maiboard.refreshRamboardAssets",
+    "onCommand:maiboard.startReview"
+  ],
+  "engines": {
+    "vscode": "^1.110.0"
+  }
+}
