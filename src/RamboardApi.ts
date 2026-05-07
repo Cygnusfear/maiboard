@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
 import { mai, maiJson } from "./mai.ts";
+import { getDiff, getLog, getRefs, type DiffFile, type GitCommit, type GitRefs } from "./git.ts";
 import { ViewStore } from "./views.ts";
 import type { ProjectSummary, SavedView, Ticket, TicketSummary } from "./types.ts";
 
@@ -92,6 +93,8 @@ export class RamboardApi {
     if (kind === "tickets") return `/${projectId}/view/default`;
     if (kind === "ticket" && ticketId)
       return `/${projectId}/ticket/${encodeURIComponent(ticketId)}`;
+    if (kind === "review" && ticketId)
+      return `/${projectId}/review/${encodeURIComponent(ticketId)}`;
     if (kind === "review") return `/${projectId}/view/status-board`;
     return `/${projectId}`;
   }
@@ -198,6 +201,102 @@ export class RamboardApi {
           ? { status: 200, body: { ok: true } }
           : { status: 404, body: { error: "view not found" } };
       }
+    }
+
+    const refsMatch = path.match(/^\/api\/projects\/([^/]+)\/git\/refs$/);
+    if (method === "GET" && refsMatch?.[1]) {
+      const projectPath = this.projectPath(refsMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const refs: GitRefs = await getRefs(projectPath);
+      return { status: 200, body: refs };
+    }
+
+    const logMatch = path.match(/^\/api\/projects\/([^/]+)\/git\/log$/);
+    if (method === "GET" && logMatch?.[1]) {
+      const projectPath = this.projectPath(logMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const base = url.searchParams.get("base") ?? "";
+      const head = url.searchParams.get("head") ?? "HEAD";
+      const commits: GitCommit[] = await getLog(projectPath, base, head);
+      return { status: 200, body: { commits } };
+    }
+
+    const diffMatch = path.match(/^\/api\/projects\/([^/]+)\/git\/diff$/);
+    if (method === "POST" && diffMatch?.[1]) {
+      const projectPath = this.projectPath(diffMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const payload = (body ?? {}) as {
+        base?: string;
+        head?: string;
+        paths?: string[];
+        commits?: string[];
+      };
+      let base = payload.base ?? "";
+      let head = payload.head ?? "HEAD";
+      if (Array.isArray(payload.commits) && payload.commits.length > 0) {
+        const oldest = payload.commits[payload.commits.length - 1];
+        const newest = payload.commits[0];
+        base = `${oldest}^`;
+        head = newest ?? head;
+      }
+      const files: DiffFile[] = await getDiff(projectPath, base, head, payload.paths ?? []);
+      return { status: 200, body: { base, head, files } };
+    }
+
+    const reviewCommentMatch = path.match(
+      /^\/api\/projects\/([^/]+)\/tickets\/([^/]+)\/review\/comments$/,
+    );
+    if (method === "POST" && reviewCommentMatch?.[1] && reviewCommentMatch[2]) {
+      const projectPath = this.projectPath(reviewCommentMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const ticketId = decodeURIComponent(reviewCommentMatch[2]);
+      const payload = (body ?? {}) as {
+        file?: string;
+        line?: number;
+        endLine?: number;
+        body?: string;
+      };
+      const text = String(payload.body ?? "").trim();
+      if (!text) return { status: 400, body: { error: "comment body required" } };
+      const args = ["add-note", ticketId, text];
+      if (payload.file) {
+        args.push("--file", payload.file);
+        if (typeof payload.line === "number") args.push("--line", String(payload.line));
+        if (typeof payload.endLine === "number") args.push("--end-line", String(payload.endLine));
+      }
+      const result = await mai(projectPath, args);
+      if (result.exitCode !== 0)
+        return { status: 500, body: { error: result.stderr || "mai add-note failed" } };
+      return { status: 201, body: { ok: true } };
+    }
+
+    const reviewVerdictMatch = path.match(
+      /^\/api\/projects\/([^/]+)\/tickets\/([^/]+)\/review\/verdict$/,
+    );
+    if (method === "POST" && reviewVerdictMatch?.[1] && reviewVerdictMatch[2]) {
+      const projectPath = this.projectPath(reviewVerdictMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const ticketId = decodeURIComponent(reviewVerdictMatch[2]);
+      const payload = (body ?? {}) as { kind?: string; message?: string };
+      const kind = payload.kind === "request" ? "request" : "approve";
+      const message = String(payload.message ?? "").trim();
+      const ticket = await maiJson<{ kind?: string }>(projectPath, ["show", ticketId]);
+      const isPr = ticket?.kind === "pr";
+      let result: { exitCode: number; stderr: string };
+      if (isPr) {
+        const args = kind === "approve" ? ["pr", "accept", ticketId] : ["pr", "reject", ticketId];
+        if (message) args.push("-m", message);
+        result = await mai(projectPath, args);
+      } else {
+        const note =
+          kind === "approve"
+            ? "Approved" + (message ? ": " + message : "")
+            : "Changes requested" + (message ? ": " + message : "");
+        result = await mai(projectPath, ["add-note", ticketId, note]);
+      }
+      if (result.exitCode !== 0)
+        return { status: 500, body: { error: result.stderr || "verdict failed" } };
+      return { status: 200, body: { ok: true } };
     }
 
     return { status: 404, body: { error: `No Maiboard API route for ${method} ${path}` } };

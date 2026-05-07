@@ -57,16 +57,24 @@ export function activate(context: vscode.ExtensionContext): void {
         firstColumn(),
       );
     }),
-    vscode.commands.registerCommand("maiboard.startReview", async () => {
-      vscode.window.showInformationMessage(
-        "Maiboard review mode is routed through Ramboard; full review UI should be added in Ramboard next.",
-      );
+    vscode.commands.registerCommand("maiboard.startReview", async (arg?: unknown) => {
+      const id =
+        normalizeTicketArg(arg) ??
+        (await vscode.window.showInputBox({
+          title: "Review Maitake Ticket",
+          prompt: "Ticket ID to review (PR or review ticket)",
+          placeHolder: "pv-mrhs",
+        }));
+      if (!id) return;
       RamboardPanel.open(
         context,
         api,
-        { title: "Maitake Review", route: api.routeFor("review") },
+        { title: `Maitake Review ${id}`, route: api.routeFor("review", id) },
         firstColumn(),
       );
+    }),
+    vscode.commands.registerCommand("maiboard.openReview", async (arg?: unknown) => {
+      await vscode.commands.executeCommand("maiboard.startReview", arg);
     }),
     vscode.commands.registerCommand("maiboard.refreshRamboardAssets", async () => {
       const extensionRoot = dirname(dirname(fileURLToPath(import.meta.url)));
