@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
 import { mai, maiJson } from "./mai.ts";
-import { getLog, getRawDiff, getRefs, type GitCommit, type GitRefs } from "./git.ts";
+import { getDiff, getLog, getRefs, type DiffFile, type GitCommit, type GitRefs } from "./git.ts";
 import { ViewStore } from "./views.ts";
 import type { ProjectSummary, SavedView, Ticket, TicketSummary } from "./types.ts";
 
@@ -297,8 +297,8 @@ export class RamboardApi {
         base = `${oldest}^`;
         head = newest ?? head;
       }
-      const patch = await getRawDiff(projectPath, base, head, payload.paths ?? []);
-      return { status: 200, body: { base, head, patch } };
+      const files: DiffFile[] = await getDiff(projectPath, base, head, payload.paths ?? []);
+      return { status: 200, body: { base, head, files } };
     }
 
     const reviewCommentMatch = path.match(

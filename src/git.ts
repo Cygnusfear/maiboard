@@ -259,17 +259,3 @@ export async function getDiff(
   if (result.exitCode !== 0) return [];
   return parseUnifiedDiff(result.stdout);
 }
-
-export async function getRawDiff(
-  cwd: string,
-  base: string,
-  head: string,
-  paths: string[] = [],
-): Promise<string> {
-  const args = ["diff", "--no-color", "--no-ext-diff"];
-  if (base) args.push(`${base}..${head}`);
-  else args.push(head);
-  if (paths.length > 0) args.push("--", ...paths);
-  const result = await git(cwd, args);
-  return result.exitCode === 0 ? result.stdout : "";
-}
