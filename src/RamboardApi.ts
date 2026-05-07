@@ -348,6 +348,19 @@ export class RamboardApi {
       return { status: 200, body: { ok: true } };
     }
 
+    const ticketNoteMatch = path.match(/^\/api\/projects\/([^/]+)\/tickets\/([^/]+)\/notes$/);
+    if (method === "POST" && ticketNoteMatch?.[1] && ticketNoteMatch[2]) {
+      const projectPath = this.projectPath(ticketNoteMatch[1]);
+      if (!projectPath) return { status: 404, body: { error: "project not found" } };
+      const ticketId = decodeURIComponent(ticketNoteMatch[2]);
+      const text = String((body as { body?: string } | undefined)?.body ?? "").trim();
+      if (!text) return { status: 400, body: { error: "note body required" } };
+      const result = await mai(projectPath, ["add-note", ticketId, text]);
+      if (result.exitCode !== 0)
+        return { status: 500, body: { error: result.stderr || "mai add-note failed" } };
+      return { status: 201, body: { ok: true } };
+    }
+
     const reviewEditMatch = path.match(
       /^\/api\/projects\/([^/]+)\/tickets\/([^/]+)\/review\/comments\/edit$/,
     );

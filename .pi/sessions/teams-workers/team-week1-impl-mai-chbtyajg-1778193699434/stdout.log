@@ -1,0 +1,20 @@
+👑🐉 Blocked at Section P.9.
+
+Done:
+- committed `3521562` `chore: pin upstream base`
+- committed `6b6bde9` `week1(p): prune analytics and updater`
+
+Verified:
+- prune rg gates are clean
+- `bun install` passes
+- `bun run build` passes
+
+Stop reason:
+- `bun test` still fails, so I did not start Section C
+- I reproduced the failing suites on a clean detached worktree at `3521562`, so they are pre-existing
+
+Follow-up tickets opened:
+- `ce-7o1ymtg3` sidecar Bun test failures
+- `ce-hub624sr` DOM-less shell test failures
+
+I already posted the full blocker note to `team_comment` and I’m waiting for coordinator direction.
