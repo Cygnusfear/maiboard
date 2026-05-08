@@ -1,7 +1,7 @@
 {
   "name": "maiboard",
   "displayName": "Maiboard",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "Maitake workbench for VS Code, powered by Ramboard.",
   "categories": [
     "Other"

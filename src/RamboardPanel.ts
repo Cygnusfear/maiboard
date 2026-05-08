@@ -211,6 +211,7 @@ export class RamboardPanel {
     request?: { method: string; url: string; body?: string };
     projectId?: string;
     path?: string;
+    ticketId?: string;
   }): Promise<void> {
     if (message.type === "maiboard.command") {
       await this.executeWorkbenchCommand(message.command);
@@ -218,6 +219,10 @@ export class RamboardPanel {
     }
     if (message.type === "maiboard.openFile") {
       await this.openProjectFile(message);
+      return;
+    }
+    if (message.type === "maiboard.openTicketInNewTab") {
+      this.openTicketInNewTab(message);
       return;
     }
     if (message.type !== "maiboard.api" || !message.request || typeof message.id !== "number")
@@ -260,6 +265,17 @@ export class RamboardPanel {
       const detail = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`Maiboard: cannot open ${message.path} - ${detail}`);
     }
+  }
+
+  private openTicketInNewTab(message: { ticketId?: string }): void {
+    if (!message.ticketId) return;
+    const id = String(message.ticketId);
+    RamboardPanel.open(
+      this.context,
+      this.api,
+      { title: `Maitake ${id}`, route: this.api.routeFor("ticket", id) },
+      vscode.ViewColumn.Beside,
+    );
   }
 
   private async executeWorkbenchCommand(command: string | undefined): Promise<void> {
