@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http";
 import { isReviewHandoffToken, isTicketId } from "./reviewHandoff.ts";
 
 export const MAIBOARD_LINK_SERVER_PORT = 39287;
+const LEGACY_LINK_SERVER_PORT = 3777;
 
 type OpenReview = (token: string) => Promise<void>;
 type OpenTicket = (ticketId: string) => Promise<void>;
@@ -18,6 +19,7 @@ export function startLinkServer({
   openReview: OpenReview;
   openTicket: OpenTicket;
 }): vscode.Disposable {
+  const servers: Server[] = [];
   let server: Server | null = createServer((req, res) => {
     void (async () => {
       const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "127.0.0.1"}`);
@@ -72,9 +74,20 @@ export function startLinkServer({
   });
 
   server.listen(MAIBOARD_LINK_SERVER_PORT, "127.0.0.1");
+  servers.push(server);
+
+  const legacyServer = createServer(
+    server.listeners("request")[0] as Parameters<typeof createServer>[0],
+  );
+  legacyServer.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code === "EADDRINUSE") return;
+    vscode.window.showWarningMessage(`Maiboard legacy link opener failed: ${error.message}`);
+  });
+  legacyServer.listen(LEGACY_LINK_SERVER_PORT, "127.0.0.1");
+  servers.push(legacyServer);
 
   return new vscode.Disposable(() => {
-    server?.close();
+    for (const item of servers) item.close();
     server = null;
   });
 }
