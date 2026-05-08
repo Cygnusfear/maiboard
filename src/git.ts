@@ -273,3 +273,18 @@ export async function getRawDiff(
   const result = await git(cwd, args);
   return result.exitCode === 0 ? result.stdout : "";
 }
+
+export async function getRawCommitDiffs(
+  cwd: string,
+  commits: string[],
+  paths: string[] = [],
+): Promise<string> {
+  const patches: string[] = [];
+  for (const commit of commits) {
+    const args = ["show", "--format=", "--no-color", "--no-ext-diff", commit];
+    if (paths.length > 0) args.push("--", ...paths);
+    const result = await git(cwd, args);
+    if (result.exitCode === 0 && result.stdout.trim()) patches.push(result.stdout);
+  }
+  return patches.join("\n");
+}

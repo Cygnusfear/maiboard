@@ -9,6 +9,13 @@ import {
   updateDecorations,
 } from "./maiComments.ts";
 import { MaiDocumentLinkProvider } from "./MaiDocumentLinkProvider.ts";
+import {
+  consumePendingReviewHandoff,
+  readReviewHandoff,
+  rememberPendingReviewHandoff,
+  tokenFromReviewUri,
+  workspaceMatchesHandoff,
+} from "./reviewHandoff.ts";
 
 function titleForRoute(route: string): string {
   const reviewMatch = route.match(/\/review\/([^/?#]+)/);
@@ -36,8 +43,77 @@ function normalizeTicketArg(arg: unknown): string | undefined {
   return undefined;
 }
 
+async function openReviewHandoff(
+  context: vscode.ExtensionContext,
+  api: RamboardApi,
+  token: string,
+): Promise<void> {
+  let payload;
+  try {
+    payload = readReviewHandoff(token);
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Maiboard: could not read review handoff ${token}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return;
+  }
+
+  if (!workspaceMatchesHandoff(payload)) {
+    try {
+      await rememberPendingReviewHandoff(context, token);
+      await vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(payload.worktree), {
+        forceNewWindow: true,
+      });
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Maiboard: could not open worktree ${payload.worktree}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    return;
+  }
+
+  const project =
+    api.projects().find((item) => item.path === payload.worktree) ?? api.projects()[0];
+  if (!project) {
+    vscode.window.showErrorMessage("Maiboard: no workspace folder open for review handoff.");
+    return;
+  }
+
+  let ticketId = payload.ticket;
+  if (!ticketId) {
+    try {
+      ticketId = await api.createReviewTicket();
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Maiboard: review handoff has no ticket and auto-create failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
+    }
+  }
+
+  RamboardPanel.open(
+    context,
+    api,
+    {
+      title: `Maitake Review ${ticketId}`,
+      route: `/${encodeURIComponent(project.id)}/review/${encodeURIComponent(ticketId)}?handoff=${encodeURIComponent(token)}`,
+    },
+    firstColumn(),
+  );
+}
+
+async function openPendingReviewHandoff(
+  context: vscode.ExtensionContext,
+  api: RamboardApi,
+): Promise<void> {
+  const token = await consumePendingReviewHandoff(context);
+  if (token) await openReviewHandoff(context, api, token);
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const api = new RamboardApi(context);
+
+  void openPendingReviewHandoff(context, api);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("maiboard.openBoard", () => {
@@ -104,6 +180,24 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("maiboard.openReview", async (arg?: unknown) => {
       await vscode.commands.executeCommand("maiboard.startReview", arg);
+    }),
+    vscode.commands.registerCommand("maiboard.openReviewHandoff", async (arg?: unknown) => {
+      const token = typeof arg === "string" ? arg : undefined;
+      if (!token) {
+        vscode.window.showErrorMessage("Maiboard: review handoff token required.");
+        return;
+      }
+      await openReviewHandoff(context, api, token);
+    }),
+    vscode.window.registerUriHandler({
+      handleUri: async (uri) => {
+        const token = tokenFromReviewUri(uri);
+        if (!token) {
+          vscode.window.showErrorMessage(`Maiboard: unsupported review link ${uri.toString()}`);
+          return;
+        }
+        await openReviewHandoff(context, api, token);
+      },
     }),
   );
 

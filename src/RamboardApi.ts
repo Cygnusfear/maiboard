@@ -2,8 +2,16 @@ import * as vscode from "vscode";
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
 import { mai, maiJson } from "./mai.ts";
-import { getLog, getRawDiff, getRefs, type GitCommit, type GitRefs } from "./git.ts";
+import {
+  getLog,
+  getRawCommitDiffs,
+  getRawDiff,
+  getRefs,
+  type GitCommit,
+  type GitRefs,
+} from "./git.ts";
 import { ViewStore } from "./views.ts";
+import { readReviewHandoff } from "./reviewHandoff.ts";
 import type { ProjectSummary, SavedView, Ticket, TicketSummary } from "./types.ts";
 
 interface MaiStateSummary {
@@ -265,6 +273,18 @@ export class RamboardApi {
       }
     }
 
+    const handoffMatch = path.match(/^\/api\/review-handoffs\/([^/]+)$/);
+    if (method === "GET" && handoffMatch?.[1]) {
+      try {
+        return { status: 200, body: readReviewHandoff(decodeURIComponent(handoffMatch[1])) };
+      } catch (error) {
+        return {
+          status: 404,
+          body: { error: error instanceof Error ? error.message : String(error) },
+        };
+      }
+    }
+
     const refsMatch = path.match(/^\/api\/projects\/([^/]+)\/git\/refs$/);
     if (method === "GET" && refsMatch?.[1]) {
       const projectPath = this.projectPath(refsMatch[1]);
@@ -292,10 +312,23 @@ export class RamboardApi {
         head?: string;
         paths?: string[];
         commits?: string[];
+        commitOrder?: "oldest-to-newest" | "newest-to-oldest";
       };
       let base = payload.base ?? "";
       let head = payload.head ?? "HEAD";
       if (Array.isArray(payload.commits) && payload.commits.length > 0) {
+        if (payload.commitOrder) {
+          const orderedCommits =
+            payload.commitOrder === "oldest-to-newest"
+              ? payload.commits
+              : [...payload.commits].reverse();
+          const oldest = orderedCommits[0];
+          const newest = orderedCommits[orderedCommits.length - 1];
+          base = `${oldest}^`;
+          head = newest ?? head;
+          const patch = await getRawCommitDiffs(projectPath, orderedCommits, payload.paths ?? []);
+          return { status: 200, body: { base, head, patch } };
+        }
         const oldest = payload.commits[payload.commits.length - 1];
         const newest = payload.commits[0];
         base = `${oldest}^`;
