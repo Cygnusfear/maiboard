@@ -19,6 +19,7 @@ export interface ReviewHandoffPayload {
 }
 
 const TOKEN_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,63}$/;
+const TICKET_ID_RE = /^[a-z]{2,4}-[a-z0-9]{4,8}$/;
 const PENDING_TOKEN_KEY = "maiboard.pendingReviewHandoffToken";
 const HEX_RE = /^[0-9a-f]{7,64}$/i;
 
@@ -115,4 +116,16 @@ export function tokenFromReviewUri(uri: vscode.Uri): string | null {
   const token = pathMatch?.[1] ? decodeURIComponent(pathMatch[1]) : queryToken;
   if (!token || !isReviewHandoffToken(token)) return null;
   return token;
+}
+
+export function isTicketId(value: string): boolean {
+  return TICKET_ID_RE.test(value);
+}
+
+export function ticketIdFromUri(uri: vscode.Uri): string | null {
+  const pathMatch = uri.path.match(/^\/ticket\/([^/?#]+)$/);
+  const queryTicket = new URLSearchParams(uri.query).get("ticket");
+  const ticketId = pathMatch?.[1] ? decodeURIComponent(pathMatch[1]) : queryTicket;
+  if (!ticketId || !isTicketId(ticketId)) return null;
+  return ticketId;
 }

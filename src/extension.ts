@@ -13,6 +13,7 @@ import {
   consumePendingReviewHandoff,
   readReviewHandoff,
   rememberPendingReviewHandoff,
+  ticketIdFromUri,
   tokenFromReviewUri,
   workspaceMatchesHandoff,
 } from "./reviewHandoff.ts";
@@ -191,12 +192,19 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.window.registerUriHandler({
       handleUri: async (uri) => {
-        const token = tokenFromReviewUri(uri);
-        if (!token) {
-          vscode.window.showErrorMessage(`Maiboard: unsupported review link ${uri.toString()}`);
+        const ticketId = ticketIdFromUri(uri);
+        if (ticketId) {
+          await vscode.commands.executeCommand("maiboard.openTicket", ticketId);
           return;
         }
-        await openReviewHandoff(context, api, token);
+
+        const token = tokenFromReviewUri(uri);
+        if (token) {
+          await openReviewHandoff(context, api, token);
+          return;
+        }
+
+        vscode.window.showErrorMessage(`Maiboard: unsupported link ${uri.toString()}`);
       },
     }),
   );
