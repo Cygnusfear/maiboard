@@ -10,6 +10,7 @@ import {
 } from "./maiComments.ts";
 import { MaiDocumentLinkProvider } from "./MaiDocumentLinkProvider.ts";
 import { startLinkServer } from "./linkServer.ts";
+import { startVscodeBridge } from "./vscodeBridge.ts";
 import {
   consumePendingReviewHandoff,
   readReviewHandoff,
@@ -114,6 +115,16 @@ async function openPendingReviewHandoff(
 
 export function activate(context: vscode.ExtensionContext): void {
   const api = new RamboardApi(context);
+
+  void startVscodeBridge(context)
+    .then((bridge) => {
+      context.subscriptions.push({ dispose: () => void bridge.dispose() });
+    })
+    .catch((error) => {
+      vscode.window.showWarningMessage(
+        `Maiboard VS Code bridge failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
 
   void openPendingReviewHandoff(context, api);
 
