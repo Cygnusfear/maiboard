@@ -9,6 +9,7 @@ import {
   updateDecorations,
 } from "./maiComments.ts";
 import { MaiDocumentLinkProvider } from "./MaiDocumentLinkProvider.ts";
+import { startLinkServer } from "./linkServer.ts";
 import {
   consumePendingReviewHandoff,
   readReviewHandoff,
@@ -117,6 +118,12 @@ export function activate(context: vscode.ExtensionContext): void {
   void openPendingReviewHandoff(context, api);
 
   context.subscriptions.push(
+    startLinkServer({
+      openReview: (token) => openReviewHandoff(context, api, token),
+      openTicket: async (ticketId) => {
+        await vscode.commands.executeCommand("maiboard.openTicket", ticketId);
+      },
+    }),
     vscode.commands.registerCommand("maiboard.openBoard", () => {
       RamboardPanel.open(
         context,
