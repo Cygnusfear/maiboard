@@ -12,6 +12,39 @@ function nonce(): string {
   return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 }
 
+function cssValue(value: string): string {
+  return value.replace(/[;{}<>]/g, " ").trim();
+}
+
+function px(value: number | undefined): string | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? `${value}px` : null;
+}
+
+function editorFontCss(): string {
+  const editor = vscode.workspace.getConfiguration("editor");
+  const fontFamily = cssValue(editor.get<string>("fontFamily") ?? "");
+  const fontSize = editor.get<number>("fontSize");
+  const lineHeight = editor.get<number>("lineHeight");
+  const fontLigatures = editor.get<boolean | string>("fontLigatures");
+  const configuredFontSize = px(fontSize);
+  const fontSizeCss = configuredFontSize ?? "var(--vscode-editor-font-size, 13px)";
+  const lineHeightCss =
+    px(lineHeight) ?? (configuredFontSize && fontSize ? `${Math.round(fontSize * 1.5)}px` : "20px");
+  const fontFeatures =
+    typeof fontLigatures === "string"
+      ? cssValue(fontLigatures) || "normal"
+      : fontLigatures === true
+        ? '"liga" on, "calt" on'
+        : '"liga" off, "calt" off';
+
+  return `:root {
+  --maiboard-editor-font-family: ${fontFamily || "var(--vscode-editor-font-family, 'Geist Mono', ui-monospace, monospace)"};
+  --maiboard-editor-font-size: ${fontSizeCss};
+  --maiboard-editor-line-height: ${lineHeightCss};
+  --maiboard-editor-font-features: ${fontFeatures};
+}`;
+}
+
 function bridgeScript(route: string): string {
   return `(() => {
   const vscode = acquireVsCodeApi();
@@ -135,6 +168,20 @@ export class RamboardPanel {
       null,
       this.disposables,
     );
+    vscode.workspace.onDidChangeConfiguration(
+      (event) => {
+        if (
+          event.affectsConfiguration("editor.fontFamily") ||
+          event.affectsConfiguration("editor.fontSize") ||
+          event.affectsConfiguration("editor.lineHeight") ||
+          event.affectsConfiguration("editor.fontLigatures")
+        ) {
+          this.render();
+        }
+      },
+      null,
+      this.disposables,
+    );
     this.startWatching();
     this.render();
   }
@@ -195,7 +242,7 @@ export class RamboardPanel {
     });
     html = html.replace(
       "<head>",
-      `<head>\n<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src ${webview.cspSource} 'nonce-${n}'; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src ${webview.cspSource} https://fonts.gstatic.com data:; connect-src ${webview.cspSource} https:;">`,
+      `<head>\n<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; script-src ${webview.cspSource} 'nonce-${n}'; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src ${webview.cspSource} https://fonts.gstatic.com data:; connect-src ${webview.cspSource} https:;">\n<style nonce="${n}">${editorFontCss()}</style>`,
     );
     html = html.replace(
       '<body class="bg-zinc-950 text-zinc-100 antialiased">',
