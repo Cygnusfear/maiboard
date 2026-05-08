@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { basename } from "node:path";
 import { mai, maiJson } from "./mai.ts";
 import {
@@ -13,6 +14,20 @@ import {
 import { ViewStore } from "./views.ts";
 import { readReviewHandoff } from "./reviewHandoff.ts";
 import type { ProjectSummary, SavedView, Ticket, TicketSummary } from "./types.ts";
+
+interface ProjectWithPath extends ProjectSummary {
+  path: string;
+  branch?: string;
+  current?: boolean;
+  kind?: "workspace" | "worktree";
+}
+
+interface GitWorktree {
+  path: string;
+  branch?: string;
+  bare?: boolean;
+  detached?: boolean;
+}
 
 interface MaiStateSummary {
   id: string;
@@ -112,6 +127,70 @@ function projectIdForPath(path: string): string {
   );
 }
 
+function parseWorktreeList(output: string): GitWorktree[] {
+  const entries: GitWorktree[] = [];
+  let current: GitWorktree | null = null;
+  for (const rawLine of output.split("\n")) {
+    const line = rawLine.trimEnd();
+    if (!line) {
+      if (current) entries.push(current);
+      current = null;
+      continue;
+    }
+    if (line.startsWith("worktree ")) {
+      if (current) entries.push(current);
+      current = { path: line.slice("worktree ".length) };
+      continue;
+    }
+    if (!current) continue;
+    if (line.startsWith("branch ")) {
+      current.branch = line.slice("branch ".length).replace(/^refs\/heads\//, "");
+    } else if (line === "bare") {
+      current.bare = true;
+    } else if (line === "detached") {
+      current.detached = true;
+    }
+  }
+  if (current) entries.push(current);
+  return entries.filter((entry) => !entry.bare);
+}
+
+function gitWorktrees(path: string): GitWorktree[] {
+  try {
+    return parseWorktreeList(
+      execFileSync("git", ["-C", path, "worktree", "list", "--porcelain"], {
+        encoding: "utf8",
+        timeout: 5_000,
+        maxBuffer: 1024 * 1024,
+      }),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function workspaceProject(folder: vscode.WorkspaceFolder): ProjectWithPath {
+  return {
+    id: projectIdForPath(folder.uri.fsPath),
+    name: folder.name || basename(folder.uri.fsPath),
+    path: folder.uri.fsPath,
+    kind: "workspace",
+    current: true,
+  };
+}
+
+function worktreeProject(worktree: GitWorktree, workspacePath: string): ProjectWithPath {
+  const name = basename(worktree.path) || worktree.branch || worktree.path;
+  return {
+    id: projectIdForPath(worktree.path),
+    name,
+    path: worktree.path,
+    branch: worktree.branch,
+    kind: "worktree",
+    current: worktree.path === workspacePath,
+  };
+}
+
 function normalizeStatus(status: string): TicketSummary["status"] {
   if (status === "open" || status === "in_progress" || status === "closed") return status;
   return "open";
@@ -153,7 +232,8 @@ export class RamboardApi {
   }
 
   get defaultProjectId(): string | null {
-    return this.projects()[0]?.id ?? null;
+    const projects = this.projects();
+    return projects.find((project) => project.current)?.id ?? projects[0]?.id ?? null;
   }
 
   routeFor(kind: "board" | "tickets" | "ticket" | "review", ticketId?: string): string {
@@ -169,12 +249,18 @@ export class RamboardApi {
     return `/${projectId}`;
   }
 
-  projects(): Array<ProjectSummary & { path: string }> {
-    return (vscode.workspace.workspaceFolders ?? []).map((folder) => ({
-      id: projectIdForPath(folder.uri.fsPath),
-      name: folder.name || basename(folder.uri.fsPath),
-      path: folder.uri.fsPath,
-    }));
+  projects(): ProjectWithPath[] {
+    const byPath = new Map<string, ProjectWithPath>();
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      const workspace = workspaceProject(folder);
+      const worktrees = gitWorktrees(folder.uri.fsPath);
+      const projects =
+        worktrees.length > 1
+          ? worktrees.map((worktree) => worktreeProject(worktree, folder.uri.fsPath))
+          : [workspace];
+      for (const project of projects) byPath.set(project.path, project);
+    }
+    return Array.from(byPath.values());
   }
 
   projectPath(projectId: string): string | null {
@@ -197,7 +283,17 @@ export class RamboardApi {
     const path = url.pathname;
 
     if (method === "GET" && path === "/api/projects") {
-      return { status: 200, body: this.projects().map(({ id, name }) => ({ id, name })) };
+      return {
+        status: 200,
+        body: this.projects().map(({ id, name, path, branch, current, kind }) => ({
+          id,
+          name,
+          path,
+          branch,
+          current,
+          kind,
+        })),
+      };
     }
     if (method === "PUT" && path === "/api/projects/reorder")
       return { status: 200, body: { ok: true } };

@@ -48,6 +48,10 @@ export interface Ticket extends TicketSummary {
 export interface ProjectSummary {
   id: string;
   name: string;
+  path?: string;
+  branch?: string;
+  current?: boolean;
+  kind?: "workspace" | "worktree";
 }
 
 export interface FilterClause {
