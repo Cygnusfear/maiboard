@@ -1,7 +1,4 @@
 import * as vscode from "vscode";
-import { cpSync, existsSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { RamboardApi } from "./RamboardApi.ts";
 import { RamboardPanel } from "./RamboardPanel.ts";
 import {
@@ -107,18 +104,6 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("maiboard.openReview", async (arg?: unknown) => {
       await vscode.commands.executeCommand("maiboard.startReview", arg);
-    }),
-    vscode.commands.registerCommand("maiboard.refreshRamboardAssets", async () => {
-      const extensionRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-      const source = join(extensionRoot, "..", "ramboard", "dist");
-      const target = join(extensionRoot, "vendor", "ramboard");
-      if (!existsSync(source)) {
-        vscode.window.showErrorMessage(`Ramboard dist not found: ${source}`);
-        return;
-      }
-      rmSync(target, { recursive: true, force: true });
-      cpSync(source, target, { recursive: true });
-      vscode.window.showInformationMessage("Refreshed Ramboard assets.");
     }),
   );
 

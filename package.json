@@ -1,7 +1,7 @@
 {
   "name": "maiboard",
   "displayName": "Maiboard",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "Maitake workbench for VS Code, powered by Ramboard.",
   "categories": [
     "Other"
@@ -57,10 +57,6 @@
       {
         "command": "maiboard.startReview",
         "title": "Maitake: Start Review"
-      },
-      {
-        "command": "maiboard.refreshRamboardAssets",
-        "title": "Maitake: Refresh Ramboard Assets"
       },
       {
         "command": "maiboard.openReview",
