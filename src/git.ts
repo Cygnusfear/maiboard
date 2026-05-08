@@ -265,8 +265,10 @@ export async function getRawDiff(
   base: string,
   head: string,
   paths: string[] = [],
+  options: { detectRenames?: boolean } = {},
 ): Promise<string> {
   const args = ["diff", "--no-color", "--no-ext-diff"];
+  if (options.detectRenames === false) args.push("--no-renames");
   if (base) args.push(`${base}..${head}`);
   else args.push(head);
   if (paths.length > 0) args.push("--", ...paths);

@@ -409,6 +409,7 @@ export class RamboardApi {
         paths?: string[];
         commits?: string[];
         commitOrder?: "oldest-to-newest" | "newest-to-oldest";
+        detectRenames?: boolean;
       };
       let base = payload.base ?? "";
       let head = payload.head ?? "HEAD";
@@ -430,7 +431,9 @@ export class RamboardApi {
         base = `${oldest}^`;
         head = newest ?? head;
       }
-      const patch = await getRawDiff(projectPath, base, head, payload.paths ?? []);
+      const patch = await getRawDiff(projectPath, base, head, payload.paths ?? [], {
+        detectRenames: payload.detectRenames,
+      });
       return { status: 200, body: { base, head, patch } };
     }
 
