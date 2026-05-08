@@ -1,14 +1,17 @@
 export interface TicketSummary {
   id: string;
-  status: "open" | "in_progress" | "closed" | "cancelled";
+  kind: string;
+  status: "open" | "in_progress" | "closed";
   type: string;
   priority: number;
   tags: string[];
   deps: string[];
   links: string[];
+  targets: string[];
   created: string;
   modified: string;
   assignee?: string;
+  branch?: string;
   title: string;
   project: string;
 }
@@ -47,13 +50,26 @@ export interface ProjectSummary {
   name: string;
 }
 
+export interface FilterClause {
+  id: string;
+  field: string;
+  operator: string;
+  value: string | number | string[] | number[] | [string, string];
+}
+
 export interface SavedList {
   id: string;
   name: string;
-  filters: unknown[];
+  filters: FilterClause[];
   sortField: string;
   sortDir: "asc" | "desc";
   groupBy?: string;
+}
+
+export interface FilterPreset {
+  id: string;
+  name: string;
+  filters: FilterClause[];
 }
 
 export interface SavedView {
@@ -64,4 +80,6 @@ export interface SavedView {
   columns?: SavedList[];
   boardSort?: { field: string; dir: "asc" | "desc" };
   collapsedGroups?: string[];
+  filterPresets?: FilterPreset[];
+  activePresetIds?: string[];
 }

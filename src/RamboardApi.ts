@@ -16,7 +16,9 @@ interface MaiStateSummary {
   tags: string[] | null;
   deps: string[] | null;
   links: string[] | null;
+  targets?: string[] | null;
   assignee?: string;
+  branch?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,28 +105,25 @@ function projectIdForPath(path: string): string {
 }
 
 function normalizeStatus(status: string): TicketSummary["status"] {
-  if (
-    status === "open" ||
-    status === "in_progress" ||
-    status === "closed" ||
-    status === "cancelled"
-  )
-    return status;
+  if (status === "open" || status === "in_progress" || status === "closed") return status;
   return "open";
 }
 
 function summaryFromMai(state: MaiStateSummary, project: string): TicketSummary {
   return {
     id: state.id,
+    kind: state.kind || "ticket",
     status: normalizeStatus(state.status),
-    type: state.type || state.kind || "task",
+    type: state.type || "",
     priority: state.priority ?? 2,
     tags: state.tags ?? [],
     deps: state.deps ?? [],
     links: state.links ?? [],
+    targets: state.targets ?? [],
     created: state.createdAt || "",
     modified: state.updatedAt || state.createdAt || "",
     assignee: state.assignee || undefined,
+    branch: state.branch || undefined,
     title: state.title || state.id,
     project,
   };
