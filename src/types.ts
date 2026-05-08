@@ -13,8 +13,33 @@ export interface TicketSummary {
   project: string;
 }
 
+export interface TicketEvent {
+  id?: string;
+  kind?: string;
+  body?: string;
+  timestamp?: string;
+  author?: string;
+  authorEmail?: string;
+  branch?: string;
+  // Edges (optional — surface "on:note:<id>" / location info if present)
+  edges?: Array<{
+    type?: string;
+    target?: { kind?: string; ref?: string };
+  }>;
+  location?: {
+    path?: string;
+    range?: {
+      startLine?: number;
+      startColumn?: number;
+      endLine?: number;
+      endColumn?: number;
+    };
+  };
+}
+
 export interface Ticket extends TicketSummary {
   body: string;
+  events: TicketEvent[];
 }
 
 export interface ProjectSummary {

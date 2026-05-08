@@ -22,6 +22,7 @@ interface MaiStateSummary {
 }
 interface MaiState extends MaiStateSummary {
   body?: string;
+  events?: import("./types.ts").TicketEvent[];
 }
 
 export interface ApiResponse {
@@ -130,7 +131,11 @@ function summaryFromMai(state: MaiStateSummary, project: string): TicketSummary 
 }
 
 function ticketFromMai(state: MaiState, project: string): Ticket {
-  return { ...summaryFromMai(state, project), body: state.body || "" };
+  return {
+    ...summaryFromMai(state, project),
+    body: state.body || "",
+    events: Array.isArray(state.events) ? state.events : [],
+  };
 }
 
 export class RamboardApi {
