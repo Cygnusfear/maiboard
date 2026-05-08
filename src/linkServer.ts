@@ -12,6 +12,12 @@ function html(message: string): string {
   return `<!doctype html><meta charset="utf-8"><title>Maiboard</title><body style="font: 13px system-ui; background: #09090b; color: #e4e4e7; padding: 24px">${message}</body>`;
 }
 
+function openedHtml(message: string): string {
+  return html(
+    `<p>${message}</p><p style="color:#a1a1aa">This tab will close automatically.</p><script>setTimeout(() => window.close(), 500)</script>`,
+  );
+}
+
 export function startLinkServer({
   openReview,
   openTicket,
@@ -42,7 +48,7 @@ export function startLinkServer({
           return;
         }
         await openReview(token);
-        res.end(html("Opened Maiboard review. You can close this tab."));
+        res.end(openedHtml("Opened Maiboard review."));
         return;
       }
 
@@ -54,7 +60,7 @@ export function startLinkServer({
           return;
         }
         await openTicket(ticketId);
-        res.end(html("Opened Maiboard ticket. You can close this tab."));
+        res.end(openedHtml("Opened Maiboard ticket."));
         return;
       }
 
