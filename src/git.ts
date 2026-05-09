@@ -276,6 +276,49 @@ export async function getRawDiff(
   return result.exitCode === 0 ? result.stdout : "";
 }
 
+export async function getRawWorkingTreeDiff(
+  cwd: string,
+  base: string,
+  paths: string[] = [],
+  options: { detectRenames?: boolean } = {},
+): Promise<string> {
+  const trackedArgs = ["diff", "--no-color", "--no-ext-diff"];
+  if (options.detectRenames === false) trackedArgs.push("--no-renames");
+  trackedArgs.push(base);
+  if (paths.length > 0) trackedArgs.push("--", ...paths);
+
+  const patches: string[] = [];
+  const tracked = await git(cwd, trackedArgs);
+  if (tracked.exitCode === 0 && tracked.stdout.trim()) patches.push(tracked.stdout);
+
+  const lsArgs = ["ls-files", "--others", "--exclude-standard"];
+  if (paths.length > 0) lsArgs.push("--", ...paths);
+  const untracked = await git(cwd, lsArgs);
+  if (untracked.exitCode !== 0) return patches.join("\n");
+
+  const files = untracked.stdout
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const file of files) {
+    const fileDiff = await git(cwd, [
+      "diff",
+      "--no-color",
+      "--no-ext-diff",
+      "--no-index",
+      "--",
+      "/dev/null",
+      file,
+    ]);
+    if ((fileDiff.exitCode === 0 || fileDiff.exitCode === 1) && fileDiff.stdout.trim()) {
+      patches.push(fileDiff.stdout);
+    }
+  }
+
+  return patches.join("\n");
+}
+
 export async function getRawCommitDiffs(
   cwd: string,
   commits: string[],

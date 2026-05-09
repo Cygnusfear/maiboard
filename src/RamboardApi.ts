@@ -7,6 +7,7 @@ import {
   getLog,
   getRawCommitDiffs,
   getRawDiff,
+  getRawWorkingTreeDiff,
   getRefs,
   type GitCommit,
   type GitRefs,
@@ -410,6 +411,7 @@ export class RamboardApi {
         commits?: string[];
         commitOrder?: "oldest-to-newest" | "newest-to-oldest";
         detectRenames?: boolean;
+        workingTree?: boolean;
       };
       let base = payload.base ?? "";
       let head = payload.head ?? "HEAD";
@@ -430,6 +432,17 @@ export class RamboardApi {
         const newest = payload.commits[0];
         base = `${oldest}^`;
         head = newest ?? head;
+      }
+      if (payload.workingTree) {
+        const patch = await getRawWorkingTreeDiff(
+          projectPath,
+          base || "HEAD",
+          payload.paths ?? [],
+          {
+            detectRenames: payload.detectRenames,
+          },
+        );
+        return { status: 200, body: { base: base || "HEAD", head: "WORKTREE", patch } };
       }
       const patch = await getRawDiff(projectPath, base, head, payload.paths ?? [], {
         detectRenames: payload.detectRenames,
