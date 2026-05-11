@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { basename } from "node:path";
 import { mai, maiJson } from "./mai.ts";
 import {
+  commitsAreContiguousFirstParent,
   getLog,
   getRawCommitDiffs,
   getRawDiff,
@@ -425,7 +426,17 @@ export class RamboardApi {
           const newest = orderedCommits[orderedCommits.length - 1];
           base = `${oldest}^`;
           head = newest ?? head;
-          const patch = await getRawCommitDiffs(projectPath, orderedCommits, payload.paths ?? []);
+          // For contiguous first-parent ranges (the common review-handoff
+          // case) prefer a single `git diff base..head`. It is correct,
+          // deduplicated, and handles merges naturally. Per-commit `git show`
+          // is reserved for cherry-picked, non-contiguous selections where
+          // we have no single range to express.
+          const contiguous = await commitsAreContiguousFirstParent(projectPath, orderedCommits);
+          const patch = contiguous
+            ? await getRawDiff(projectPath, base, head, payload.paths ?? [], {
+                detectRenames: payload.detectRenames,
+              })
+            : await getRawCommitDiffs(projectPath, orderedCommits, payload.paths ?? []);
           return { status: 200, body: { base, head, patch } };
         }
         const oldest = payload.commits[payload.commits.length - 1];

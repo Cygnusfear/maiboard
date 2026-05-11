@@ -326,10 +326,40 @@ export async function getRawCommitDiffs(
 ): Promise<string> {
   const patches: string[] = [];
   for (const commit of commits) {
-    const args = ["show", "--format=", "--no-color", "--no-ext-diff", commit];
+    // --first-parent: on a merge commit, `git show` defaults to --cc (combined
+    // diff), which silently omits files that came in cleanly from one parent.
+    // For a review listing the merge as a single unit, we want the diff
+    // against the first parent so every file the merge introduces is visible.
+    const args = ["show", "--format=", "--no-color", "--no-ext-diff", "--first-parent", commit];
     if (paths.length > 0) args.push("--", ...paths);
     const result = await git(cwd, args);
     if (result.exitCode === 0 && result.stdout.trim()) patches.push(result.stdout);
   }
   return patches.join("\n");
+}
+
+/**
+ * Check whether `commits` is exactly the contiguous first-parent range
+ * `${oldest}^..${newest}`. Used by the diff endpoint to decide between a
+ * single `git diff base..head` (clean, deduplicated, correct for ranges) and
+ * the per-commit `git show` fallback (needed for cherry-picked subsets).
+ *
+ * `commits` must be ordered oldest-to-newest.
+ */
+export async function commitsAreContiguousFirstParent(
+  cwd: string,
+  commits: string[],
+): Promise<boolean> {
+  if (commits.length === 0) return false;
+  const oldest = commits[0]!;
+  const newest = commits[commits.length - 1]!;
+  const result = await git(cwd, ["rev-list", "--first-parent", `${oldest}^..${newest}`]);
+  if (result.exitCode !== 0) return false;
+  const range = result.stdout
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (range.length !== commits.length) return false;
+  const want = new Set(commits.map((c) => c.toLowerCase()));
+  return range.every((hash) => want.has(hash.toLowerCase()));
 }
