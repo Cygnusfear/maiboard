@@ -163,10 +163,7 @@ export function App() {
     <div className="flex h-screen min-h-0 overflow-hidden">
       <ProjectRail />
 
-      <div
-        className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-        style={{ viewTransitionName: "content" }}
-      >
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <RefreshIndicator />
         <Switch>
           <Route path="/:projectId/review/:ticketId" component={ReviewRoute} />

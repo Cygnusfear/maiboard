@@ -35,67 +35,6 @@ code,
   background-color: color-mix(in srgb, var(--color-zinc-800) 25%, transparent);
 }
 
-/* ── View Transitions ──────────────────────────────────────── */
-
-/* Sidebar: no animation, stays in place */
-::view-transition-old(sidebar),
-::view-transition-new(sidebar) {
-  animation: none;
-}
-
-/* Root: no animation (handled per-element) */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-}
-
-/* Content area: default crossfade */
-::view-transition-old(content) {
-  animation: vt-fade-out 75ms ease both;
-}
-::view-transition-new(content) {
-  animation: vt-fade-in 75ms ease both;
-}
-
-/* Slide-up — entering ticket detail */
-[data-transition="slide-up"]::view-transition-old(content) {
-  animation: vt-fade-out 60ms ease both;
-}
-[data-transition="slide-up"]::view-transition-new(content) {
-  animation: vt-slide-up-in 100ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* Slide-down — leaving ticket detail (back to list) */
-[data-transition="slide-down"]::view-transition-old(content) {
-  animation: vt-slide-up-out 75ms ease both;
-}
-[data-transition="slide-down"]::view-transition-new(content) {
-  animation: vt-fade-in 90ms ease 25ms both;
-}
-
-@keyframes vt-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes vt-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes vt-slide-up-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-}
-@keyframes vt-slide-up-out {
-  to {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-}
-
 /* ── TipTap Editor ─────────────────────────────────────────── */
 
 /*
