@@ -1,5 +1,5 @@
 {
-  "name": "@maiboard/cli",
+  "name": "mai-board",
   "version": "0.3.1",
   "private": false,
   "bin": {

@@ -12,7 +12,7 @@
     "build": "bun run --workspaces build",
     "build:board": "bun run --filter @maiboard/board build",
     "build:server": "bun run --filter @maiboard/server build",
-    "build:cli": "bun run --filter @maiboard/cli build",
+    "build:cli": "bun run --filter mai-board build",
     "build:vscode": "bun run --filter maiboard build",
     "package:vscode": "bun run --filter maiboard package",
     "typecheck": "bun run --workspaces typecheck",

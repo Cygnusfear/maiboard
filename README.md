@@ -36,7 +36,7 @@ Reload the Codium window after installing a new vsix.
 No postinstall hooks mutate global state. Register explicitly:
 
 ```bash
-bun run --filter @maiboard/cli dev -- --register
+bun run --filter mai-board dev -- --register
 ```
 
 That writes `board = "mai-board"` to `~/.maitake/plugins.toml` if needed. After the binary is on PATH, `mai board` resolves to `mai-board`.

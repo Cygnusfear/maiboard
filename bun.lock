@@ -13,11 +13,11 @@
     },
     "packages/api": {
       "name": "@maiboard/api",
-      "version": "0.3.0",
+      "version": "0.3.1",
     },
     "packages/board": {
       "name": "@maiboard/board",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "dependencies": {
         "@base-ui/react": "^1.2.0",
         "@dagrejs/dagre": "^2.0.4",
@@ -69,8 +69,8 @@
       },
     },
     "packages/cli": {
-      "name": "@maiboard/cli",
-      "version": "0.3.0",
+      "name": "mai-board",
+      "version": "0.3.1",
       "bin": {
         "mai-board": "./dist/cli.js",
       },
@@ -80,14 +80,14 @@
     },
     "packages/server": {
       "name": "@maiboard/server",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "dependencies": {
         "@maiboard/api": "workspace:*",
       },
     },
     "packages/vscode": {
       "name": "maiboard",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "dependencies": {
         "@maiboard/api": "workspace:*",
       },
@@ -267,8 +267,6 @@
     "@maiboard/api": ["@maiboard/api@workspace:packages/api"],
 
     "@maiboard/board": ["@maiboard/board@workspace:packages/board"],
-
-    "@maiboard/cli": ["@maiboard/cli@workspace:packages/cli"],
 
     "@maiboard/server": ["@maiboard/server@workspace:packages/server"],
 
@@ -1109,6 +1107,8 @@
     "lru_map": ["lru_map@0.4.1", "", {}, "sha512-I+lBvqMMFfqaV8CJCISjI3wbjmwVu/VyOoU7+qtu9d7ioW5klMgsTTiUOUp+DJvfTTzKXoPbyC6YfgkNcyPSOg=="],
 
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
+
+    "mai-board": ["mai-board@workspace:packages/cli"],
 
     "maiboard": ["maiboard@workspace:packages/vscode"],
 
