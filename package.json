@@ -1,100 +1,28 @@
 {
   "name": "maiboard",
-  "displayName": "Maiboard",
-  "version": "0.2.21",
-  "description": "Maitake workbench for VS Code, powered by Ramboard.",
-  "categories": [
-    "Other"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pi0/maiboard"
-  },
-  "publisher": "pi0",
-  "files": [
-    "dist",
-    "vendor/ramboard",
-    "README.md",
-    "LICENSE.txt",
-    "package.json"
+  "version": "0.3.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
   "type": "module",
-  "main": "./dist/extension.cjs",
   "scripts": {
-    "build": "rolldown -c rolldown.config.ts",
-    "dev": "rolldown -c rolldown.config.ts -w",
-    "typecheck": "tsgo --noEmit --skipLibCheck",
-    "fmt": "oxlint src rolldown.config.ts --fix && oxfmt src rolldown.config.ts package.json tsconfig.json README.md",
-    "lint": "oxlint src rolldown.config.ts && oxfmt --check src rolldown.config.ts package.json tsconfig.json README.md",
-    "package": "pnpm build && pnpx @vscode/vsce package --no-dependencies",
-    "refresh-ramboard": "rm -rf vendor/ramboard && mkdir -p vendor/ramboard && cp -R ../ramboard/dist/. vendor/ramboard/"
+    "dev:board": "bun run --filter @maiboard/board dev",
+    "dev:vscode": "bun run --filter @maiboard/vscode dev",
+    "build": "bun run --workspaces build",
+    "build:board": "bun run --filter @maiboard/board build",
+    "build:server": "bun run --filter @maiboard/server build",
+    "build:cli": "bun run --filter @maiboard/cli build",
+    "build:vscode": "bun run --filter @maiboard/vscode build",
+    "package:vscode": "bun run --filter @maiboard/vscode package",
+    "typecheck": "bun run --workspaces typecheck",
+    "lint": "bunx oxlint --no-error-on-unmatched-pattern src packages/*/src && bunx oxfmt --check package.json tsconfig.base.json README.md packages/*/package.json packages/*/src",
+    "fmt": "bunx oxlint --no-error-on-unmatched-pattern src packages/*/src --fix && bunx oxfmt package.json tsconfig.base.json README.md packages/*/package.json packages/*/src",
+    "setup-hooks": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "@types/vscode": "^1.110.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260320.1",
-    "@vscode/vsce": "^3.7.1",
     "oxfmt": "^0.41.0",
     "oxlint": "^1.56.0",
-    "rolldown": "^1.0.0-rc.10",
     "typescript": "^5.9.3"
-  },
-  "contributes": {
-    "commands": [
-      {
-        "command": "maiboard.openBoard",
-        "title": "Maitake: Open Board"
-      },
-      {
-        "command": "maiboard.openTickets",
-        "title": "Maitake: Open Tickets"
-      },
-      {
-        "command": "maiboard.openTicket",
-        "title": "Maitake: Open Ticket"
-      },
-      {
-        "command": "maiboard.startReview",
-        "title": "Maitake: Start Review"
-      },
-      {
-        "command": "maiboard.openReview",
-        "title": "Open Review",
-        "category": "Maitake"
-      },
-      {
-        "command": "maiboard.maiCommentList",
-        "title": "Maitake: List @mai: Tickets"
-      },
-      {
-        "command": "maiboard.maiCommentResolve",
-        "title": "Maitake: Resolve @mai: at Cursor"
-      },
-      {
-        "command": "maiboard.openReviewHandoff",
-        "title": "Open Review Handoff",
-        "category": "Maitake"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "maiboard.openTicket",
-        "key": "ctrl+shift+t",
-        "mac": "cmd+shift+t"
-      },
-      {
-        "command": "maiboard.startReview",
-        "key": "ctrl+shift+r"
-      }
-    ]
-  },
-  "activationEvents": [
-    "onStartupFinished",
-    "onUri",
-    "onWebviewPanel:maiboard.ramboard"
-  ],
-  "engines": {
-    "vscode": "^1.110.0"
   }
 }

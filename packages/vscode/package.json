@@ -1,0 +1,14 @@
+{
+  "name": "@maiboard/vscode",
+  "displayName": "Maiboard",
+  "version": "0.3.0",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "typecheck": "true",
+    "lint": "true",
+    "fmt": "true",
+    "package": "true"
+  }
+}

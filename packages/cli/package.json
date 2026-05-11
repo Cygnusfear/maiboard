@@ -1,0 +1,15 @@
+{
+  "name": "@maiboard/cli",
+  "version": "0.3.0",
+  "private": false,
+  "bin": {
+    "mai-board": "./dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "typecheck": "true",
+    "lint": "true",
+    "fmt": "true"
+  }
+}

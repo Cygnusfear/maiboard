@@ -1,0 +1,12 @@
+{
+  "name": "@maiboard/server",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "true",
+    "typecheck": "true",
+    "lint": "true",
+    "fmt": "true"
+  }
+}
