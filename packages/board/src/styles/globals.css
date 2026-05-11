@@ -1,0 +1,483 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+body {
+  font-family:
+    "Geist",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+code,
+.font-mono {
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+
+/* Row entrance animation — staggered fade+slide */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-row-in {
+  animation: row-in 0.2s ease-out both;
+}
+
+/* List row hover — pure CSS, no React re-render */
+.list-row:hover {
+  background-color: color-mix(in srgb, var(--color-zinc-800) 25%, transparent);
+}
+
+/* ── View Transitions ──────────────────────────────────────── */
+
+/* Sidebar: no animation, stays in place */
+::view-transition-old(sidebar),
+::view-transition-new(sidebar) {
+  animation: none;
+}
+
+/* Root: no animation (handled per-element) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* Content area: default crossfade */
+::view-transition-old(content) {
+  animation: vt-fade-out 75ms ease both;
+}
+::view-transition-new(content) {
+  animation: vt-fade-in 75ms ease both;
+}
+
+/* Slide-up — entering ticket detail */
+[data-transition="slide-up"]::view-transition-old(content) {
+  animation: vt-fade-out 60ms ease both;
+}
+[data-transition="slide-up"]::view-transition-new(content) {
+  animation: vt-slide-up-in 100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Slide-down — leaving ticket detail (back to list) */
+[data-transition="slide-down"]::view-transition-old(content) {
+  animation: vt-slide-up-out 75ms ease both;
+}
+[data-transition="slide-down"]::view-transition-new(content) {
+  animation: vt-fade-in 90ms ease 25ms both;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes vt-slide-up-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* ── TipTap Editor ─────────────────────────────────────────── */
+
+/*
+ * Match the original react-markdown + @tailwindcss/typography prose styling.
+ * The .ticket-editor-body class is set on the TipTap contenteditable div.
+ */
+
+.ticket-editor-body {
+  outline: none;
+  min-height: 2rem;
+  cursor: text;
+
+  /* Base text */
+  font-size: 0.875rem; /* prose-sm */
+  line-height: 1.7142857;
+  color: #d4d4d8; /* zinc-300 */
+}
+
+/* ── Headings ──────────────────────────────────────────────── */
+
+.ticket-editor-body h1,
+.ticket-editor-body h2,
+.ticket-editor-body h3 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #f4f4f5; /* zinc-100 */
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.ticket-editor-body h1:first-child,
+.ticket-editor-body h2:first-child,
+.ticket-editor-body h3:first-child {
+  margin-top: 0;
+}
+
+.ticket-editor-body h1 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+.ticket-editor-body h2 {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.ticket-editor-body h3 {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* ── Paragraphs ────────────────────────────────────────────── */
+
+.ticket-editor-body p {
+  color: #d4d4d8;
+  line-height: 1.7;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.ticket-editor-body p:first-child {
+  margin-top: 0;
+}
+.ticket-editor-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Inline styles ─────────────────────────────────────────── */
+
+.ticket-editor-body strong {
+  color: #e4e4e7; /* zinc-200 */
+  font-weight: 600;
+}
+
+.ticket-editor-body em {
+  font-style: italic;
+}
+
+.ticket-editor-body s,
+.ticket-editor-body del {
+  text-decoration: line-through;
+  color: #71717a;
+}
+
+/* ── Links ─────────────────────────────────────────────────── */
+
+.ticket-editor-body a,
+.ticket-editor-body .ticket-editor-link {
+  color: #60a5fa; /* blue-400 */
+  text-decoration: underline;
+  text-decoration-color: rgb(96 165 250 / 0.3);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    text-decoration-color 0.15s;
+}
+
+.ticket-editor-body a:hover,
+.ticket-editor-body .ticket-editor-link:hover {
+  color: #93bbfd; /* blue-300 */
+  text-decoration-color: rgb(147 187 253 / 0.5);
+}
+
+/* Ticket ID auto-link decorations */
+.ticket-id-link {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-decoration-color: rgb(96 165 250 / 0.3);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  transition:
+    color 0.15s,
+    text-decoration-color 0.15s;
+}
+
+.ticket-id-link:hover {
+  color: #93bbfd;
+  text-decoration-color: rgb(147 187 253 / 0.5);
+}
+
+/* ── Inline code ───────────────────────────────────────────── */
+
+.ticket-editor-body code {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  background: #27272a; /* zinc-800 */
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  color: #d4d4d8;
+}
+
+/* Remove backtick pseudo-elements that prose adds */
+.ticket-editor-body code::before,
+.ticket-editor-body code::after {
+  content: none;
+}
+
+/* ── Code blocks ───────────────────────────────────────────── */
+
+.ticket-editor-body pre {
+  background: #0a0a0a; /* zinc-950 */
+  border: 1px solid #27272a; /* zinc-800 */
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.ticket-editor-body pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #d4d4d8;
+}
+
+/* ── Lists ─────────────────────────────────────────────────── */
+
+.ticket-editor-body ul,
+.ticket-editor-body ol {
+  padding-left: 1.5em;
+  margin: 0.75em 0;
+}
+
+.ticket-editor-body ul {
+  list-style-type: disc;
+}
+.ticket-editor-body ol {
+  list-style-type: decimal;
+}
+
+.ticket-editor-body li {
+  color: #d4d4d8;
+  margin: 0.25em 0;
+}
+
+.ticket-editor-body li p {
+  margin: 0.25em 0;
+}
+
+/* Nested lists */
+.ticket-editor-body ul ul,
+.ticket-editor-body ol ol,
+.ticket-editor-body ul ol,
+.ticket-editor-body ol ul {
+  margin: 0.25em 0;
+}
+
+/* ── Task lists ────────────────────────────────────────────── */
+
+.ticket-editor-body ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ticket-editor-body ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ticket-editor-body ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  margin-top: 0.3em;
+}
+
+.ticket-editor-body ul[data-type="taskList"] li > label input[type="checkbox"] {
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.ticket-editor-body ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  text-decoration: line-through;
+  color: #71717a;
+}
+
+/* ── Blockquotes ───────────────────────────────────────────── */
+
+.ticket-editor-body blockquote {
+  border-left: 3px solid #3f3f46; /* zinc-700 */
+  padding-left: 1em;
+  margin: 1em 0;
+  color: #a1a1aa; /* zinc-400 */
+  font-style: italic;
+}
+
+.ticket-editor-body blockquote p {
+  color: inherit;
+}
+
+/* ── Horizontal rules ──────────────────────────────────────── */
+
+.ticket-editor-body hr {
+  border: none;
+  border-top: 1px solid #3f3f46;
+  margin: 1.5em 0;
+}
+
+/* ── Tables ────────────────────────────────────────────────── */
+
+.ticket-editor-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.8125rem;
+}
+
+.ticket-editor-body table td,
+.ticket-editor-body table th {
+  border: 1px solid #3f3f46; /* zinc-700 */
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ticket-editor-body table th {
+  background: #1c1c1f; /* slightly lighter than zinc-900 */
+  font-weight: 500;
+  color: #e4e4e7;
+}
+
+.ticket-editor-body table td {
+  color: #d4d4d8;
+}
+
+.ticket-editor-body table tr:hover td {
+  background: rgb(39 39 42 / 0.3);
+}
+
+/* ── Placeholder ───────────────────────────────────────────── */
+
+.ticket-editor-body p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #52525b; /* zinc-600 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* ── Focus ring (subtle, only on the editor itself) ────────── */
+
+.ticket-editor-body:focus {
+  outline: none;
+}
+
+/* ── Note body (read-only rendered markdown in timeline) ──── */
+
+.note-body {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #d4d4d8;
+}
+
+.note-body h1,
+.note-body h2,
+.note-body h3 {
+  font-weight: 500;
+  color: #f4f4f5;
+  margin-top: 1em;
+  margin-bottom: 0.25em;
+}
+.note-body h1 {
+  font-size: 0.9375rem;
+}
+.note-body h2 {
+  font-size: 0.875rem;
+}
+.note-body h3 {
+  font-size: 0.8125rem;
+}
+
+.note-body p {
+  margin: 0.5em 0;
+}
+.note-body p:first-child {
+  margin-top: 0;
+}
+.note-body p:last-child {
+  margin-bottom: 0;
+}
+
+.note-body strong {
+  color: #e4e4e7;
+  font-weight: 600;
+}
+.note-body code {
+  background: #27272a;
+  border-radius: 3px;
+  padding: 0.15em 0.35em;
+  font-size: 0.85em;
+  font-family: "Geist Mono", monospace;
+  color: #a1a1aa;
+}
+.note-body pre {
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+.note-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.note-body ul,
+.note-body ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+.note-body li {
+  margin: 0.15em 0;
+}
+.note-body li::marker {
+  color: #71717a;
+}
+.note-body hr {
+  border: none;
+  border-top: 1px solid #3f3f46;
+  margin: 0.75em 0;
+}
+.note-body a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}

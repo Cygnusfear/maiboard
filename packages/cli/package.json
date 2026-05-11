@@ -7,9 +7,14 @@
   },
   "type": "module",
   "scripts": {
-    "build": "true",
-    "typecheck": "true",
-    "lint": "true",
-    "fmt": "true"
-  }
+    "dev": "bun run src/cli.ts",
+    "build": "bun build src/cli.ts --outdir dist --target bun",
+    "typecheck": "bunx tsc --noEmit",
+    "lint": "bunx oxlint src && bunx oxfmt --check src package.json tsconfig.json",
+    "fmt": "bunx oxlint src --fix && bunx oxfmt src package.json tsconfig.json"
+  },
+  "dependencies": {
+    "@maiboard/server": "workspace:*"
+  },
+  "devDependencies": {}
 }

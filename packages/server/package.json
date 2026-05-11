@@ -3,10 +3,20 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/projects/config.ts"
+  },
   "scripts": {
-    "build": "true",
-    "typecheck": "true",
-    "lint": "true",
-    "fmt": "true"
-  }
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run src/index.ts",
+    "typecheck": "bunx tsc --noEmit",
+    "lint": "bunx oxlint src && bunx oxfmt --check src package.json tsconfig.json",
+    "fmt": "bunx oxlint src --fix && bunx oxfmt src package.json tsconfig.json"
+  },
+  "dependencies": {
+    "@maiboard/api": "workspace:*"
+  },
+  "devDependencies": {}
 }
