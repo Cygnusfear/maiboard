@@ -18,7 +18,7 @@ declare global {
  * for the standalone web app).
  *
  * The bridge path is gated on `window.__MAIBOARD__.vscode` so the standalone
- * Ramboard never accidentally posts to nothing.
+ * Maiboard never accidentally posts to nothing.
  */
 export function useOpenTicket() {
   const [, navigate] = useNavigate();

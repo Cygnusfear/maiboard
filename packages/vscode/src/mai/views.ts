@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { FilterClause, SavedView } from "./types.ts";
+import type { FilterClause, SavedView } from "@maiboard/api";
 
 const ACTIONABLE_KINDS = ["ticket", "review", "pr"];
 const LEGACY_NON_ACTIONABLE_TYPES = ["adr", "decision"];
@@ -101,14 +101,14 @@ function migrateTypeMasqueradeClause(clause: FilterClause): FilterClause {
   if (clause.field !== "type") return clause;
 
   const rewriteSingle = (value: string) =>
-    KINDLIKE_TYPES.has(value) ? { ...clause, field: "kind", value } : clause;
+    KINDLIKE_TYPES.has(value) ? { ...clause, field: "kind" as const, value } : clause;
 
   if (typeof clause.value === "string") return rewriteSingle(clause.value);
 
   if (Array.isArray(clause.value)) {
     const values = clause.value.map(String);
     if (values.length > 0 && values.every((value) => KINDLIKE_TYPES.has(value))) {
-      return { ...clause, field: "kind", value: values };
+      return { ...clause, field: "kind" as const, value: values };
     }
   }
 

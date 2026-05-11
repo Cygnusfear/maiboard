@@ -15,7 +15,7 @@
  */
 
 import * as vscode from "vscode";
-import { mai } from "./mai.ts";
+import { mai } from "../mai/mai.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────
 

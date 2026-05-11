@@ -1,5 +1,5 @@
 {
-  "name": "maiboard",
+  "name": "maiboard-workspace",
   "version": "0.3.0",
   "private": true,
   "workspaces": [
@@ -8,13 +8,13 @@
   "type": "module",
   "scripts": {
     "dev:board": "bun run --filter @maiboard/board dev",
-    "dev:vscode": "bun run --filter @maiboard/vscode dev",
+    "dev:vscode": "bun run --filter maiboard dev",
     "build": "bun run --workspaces build",
     "build:board": "bun run --filter @maiboard/board build",
     "build:server": "bun run --filter @maiboard/server build",
     "build:cli": "bun run --filter @maiboard/cli build",
-    "build:vscode": "bun run --filter @maiboard/vscode build",
-    "package:vscode": "bun run --filter @maiboard/vscode package",
+    "build:vscode": "bun run --filter maiboard build",
+    "package:vscode": "bun run --filter maiboard package",
     "typecheck": "bun run --workspaces typecheck",
     "lint": "bunx oxlint --no-error-on-unmatched-pattern src packages/*/src && bunx oxfmt --check package.json tsconfig.base.json README.md packages/*/package.json packages/*/src",
     "fmt": "bunx oxlint --no-error-on-unmatched-pattern src packages/*/src --fix && bunx oxfmt package.json tsconfig.base.json README.md packages/*/package.json packages/*/src",

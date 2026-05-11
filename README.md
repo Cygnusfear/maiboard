@@ -1,28 +1,42 @@
 # Maiboard
 
-Maiboard is a standalone VS Code extension for the Maitake workbench. It embeds the Ramboard frontend in VS Code webviews and serves Maitake data through a local VS Code bridge rather than a separate HTTP server.
+Maiboard is the Maitake board UI and VS Code extension in one Bun workspace. It contains the shared Vite board, the Bun API server, the `mai-board` launcher/plugin binary, shared API types, and the VS Code/Codium extension.
+
+## Packages
+
+- `packages/board` — Vite + React board UI.
+- `packages/server` — Bun API server that shells out to `mai`.
+- `packages/cli` — `mai-board` binary. Direct launcher and `mai board` plugin entry are the same binary.
+- `packages/api` — shared TypeScript-only route/domain types.
+- `packages/vscode` — VS Code/Codium extension (`pi0.maiboard`).
 
 ## Commands
 
-- `Maitake: Open Board` — opens Ramboard's status board route for the current workspace.
-- `Maitake: Open Tickets` — opens Ramboard's ticket list route for the current workspace.
-- `Maitake: Open Ticket` — prompts for a Maitake ticket ID and opens Ramboard's ticket detail route.
-- `Maitake: Start Review` — opens the review entry point. Full review mode belongs in Ramboard and should be added there next.
-- `Maitake: Refresh Ramboard Assets` — copies `../ramboard/dist` into `vendor/ramboard`.
+```bash
+bun install
+bun run typecheck
+bun run lint
+bun run build
+bun run package:vscode
+```
 
-## Architecture
+## VS Code/Codium packaging
 
-- `vendor/ramboard` contains the built Ramboard Vite assets.
-- `src/RamboardPanel.ts` serves those assets inside a VS Code webview, rewrites asset URLs, injects the initial Ramboard route, and installs a `fetch('/api/...')` bridge.
-- `src/RamboardApi.ts` implements Ramboard's API shape by shelling out to `mai` and storing saved views under VS Code global storage.
-- `src/vscodeBridge.ts` owns Maiboard's Pi/agent-to-VS-Code bridge. It writes `~/.pi/vscode-bridge.json` on activation so editor tools such as `editor_open` can call back into the active VS Code window without depending on the separate `pi-vscode` extension.
-- No polling is used for board refresh. The panel watches git refs/logs/packed-refs and `.maitake/**/*`, then notifies the webview that ticket data changed.
-
-## Development
+The extension vendors the board build into `packages/vscode/vendor/board`:
 
 ```bash
-pnpm install
-pnpm typecheck
-pnpm build
-pnpm package
+bun run package:vscode
+codium --install-extension packages/vscode/maiboard-0.3.0.vsix --force
 ```
+
+Reload the Codium window after installing a new vsix.
+
+## mai-board plugin registration
+
+No postinstall hooks mutate global state. Register explicitly:
+
+```bash
+bun run --filter @maiboard/cli dev -- --register
+```
+
+That writes `board = "mai-board"` to `~/.maitake/plugins.toml` if needed. After the binary is on PATH, `mai board` resolves to `mai-board`.

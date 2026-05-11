@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { createServer, type Server } from "node:http";
-import { isReviewHandoffToken, isTicketId } from "./reviewHandoff.ts";
+import { isReviewHandoffToken, isTicketId } from "../review/reviewHandoff.ts";
 
 export const MAIBOARD_LINK_SERVER_PORT = 39287;
 const LEGACY_LINK_SERVER_PORT = 3777;

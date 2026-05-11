@@ -1,16 +1,16 @@
 import * as vscode from "vscode";
-import { RamboardApi } from "./RamboardApi.ts";
-import { RamboardPanel } from "./RamboardPanel.ts";
+import { MaiboardApi } from "./panel/MaiboardApi.ts";
+import { MaiboardPanel } from "./panel/MaiboardPanel.ts";
 import {
   clearDecorations,
   handleMaiSave,
   maiCommentListCommand,
   maiCommentResolveCommand,
   updateDecorations,
-} from "./maiComments.ts";
-import { MaiDocumentLinkProvider } from "./MaiDocumentLinkProvider.ts";
-import { startLinkServer } from "./linkServer.ts";
-import { startVscodeBridge } from "./vscodeBridge.ts";
+} from "./comments/maiComments.ts";
+import { MaiDocumentLinkProvider } from "./mai/MaiDocumentLinkProvider.ts";
+import { startLinkServer } from "./links/linkServer.ts";
+import { startVscodeBridge } from "./panel/vscodeBridge.ts";
 import {
   consumePendingReviewHandoff,
   readReviewHandoff,
@@ -18,7 +18,7 @@ import {
   ticketIdFromUri,
   tokenFromReviewUri,
   workspaceMatchesHandoff,
-} from "./reviewHandoff.ts";
+} from "./review/reviewHandoff.ts";
 
 function titleForRoute(route: string): string {
   const reviewMatch = route.match(/\/review\/([^/?#]+)/);
@@ -48,7 +48,7 @@ function normalizeTicketArg(arg: unknown): string | undefined {
 
 async function openReviewHandoff(
   context: vscode.ExtensionContext,
-  api: RamboardApi,
+  api: MaiboardApi,
   token: string,
 ): Promise<void> {
   let payload;
@@ -94,7 +94,7 @@ async function openReviewHandoff(
     }
   }
 
-  RamboardPanel.open(
+  MaiboardPanel.open(
     context,
     api,
     {
@@ -107,14 +107,14 @@ async function openReviewHandoff(
 
 async function openPendingReviewHandoff(
   context: vscode.ExtensionContext,
-  api: RamboardApi,
+  api: MaiboardApi,
 ): Promise<void> {
   const token = await consumePendingReviewHandoff(context);
   if (token) await openReviewHandoff(context, api, token);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  const api = new RamboardApi(context);
+  const api = new MaiboardApi(context);
 
   void startVscodeBridge(context)
     .then((bridge) => {
@@ -136,7 +136,7 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     }),
     vscode.commands.registerCommand("maiboard.openBoard", () => {
-      RamboardPanel.open(
+      MaiboardPanel.open(
         context,
         api,
         { title: "Maitake Board", route: api.routeFor("board") },
@@ -144,7 +144,7 @@ export function activate(context: vscode.ExtensionContext): void {
       );
     }),
     vscode.commands.registerCommand("maiboard.openTickets", () => {
-      RamboardPanel.open(
+      MaiboardPanel.open(
         context,
         api,
         { title: "Maitake Tickets", route: api.routeFor("tickets") },
@@ -160,7 +160,7 @@ export function activate(context: vscode.ExtensionContext): void {
           placeHolder: "pv-mrhs",
         }));
       if (!id) return;
-      RamboardPanel.open(
+      MaiboardPanel.open(
         context,
         api,
         { title: `Maitake ${id}`, route: api.routeFor("ticket", id) },
@@ -190,7 +190,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         vscode.window.showInformationMessage(`Created review ticket ${id}.`);
       }
-      RamboardPanel.open(
+      MaiboardPanel.open(
         context,
         api,
         { title: `Maitake Review ${id}`, route: api.routeFor("review", id) },
@@ -246,7 +246,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   context.subscriptions.push(
-    vscode.window.registerWebviewPanelSerializer("maiboard.ramboard", {
+    vscode.window.registerWebviewPanelSerializer("maiboard.panel", {
       async deserializeWebviewPanel(panel, state) {
         const persisted =
           state && typeof state === "object" && "route" in state
@@ -255,7 +255,7 @@ export function activate(context: vscode.ExtensionContext): void {
         const route =
           typeof persisted === "string" && persisted.length > 0 ? persisted : api.routeFor("board");
         panel.title = titleForRoute(route);
-        RamboardPanel.restore(context, api, panel, { route, title: panel.title });
+        MaiboardPanel.restore(context, api, panel, { route, title: panel.title });
       },
     }),
   );

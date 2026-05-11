@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { RamboardApi } from "./RamboardApi.ts";
+import type { MaiboardApi } from "./MaiboardApi.ts";
 
 interface PanelState {
   route: string;
@@ -145,8 +145,8 @@ function bridgeScript(route: string): string {
 })();`;
 }
 
-export class RamboardPanel {
-  private static readonly panels = new Set<RamboardPanel>();
+export class MaiboardPanel {
+  private static readonly panels = new Set<MaiboardPanel>();
   private readonly disposables: vscode.Disposable[] = [];
   private watcher?: vscode.Disposable;
   private debounce?: ReturnType<typeof setTimeout>;
@@ -154,13 +154,13 @@ export class RamboardPanel {
   private constructor(
     private readonly panel: vscode.WebviewPanel,
     private readonly context: vscode.ExtensionContext,
-    private readonly api: RamboardApi,
+    private readonly api: MaiboardApi,
     private state: PanelState,
   ) {
-    RamboardPanel.panels.add(this);
+    MaiboardPanel.panels.add(this);
     this.panel.webview.options = {
       enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "vendor", "ramboard")],
+      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "vendor", "board")],
     };
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
@@ -188,38 +188,38 @@ export class RamboardPanel {
 
   static restore(
     context: vscode.ExtensionContext,
-    api: RamboardApi,
+    api: MaiboardApi,
     panel: vscode.WebviewPanel,
     state: PanelState,
-  ): RamboardPanel {
-    return new RamboardPanel(panel, context, api, state);
+  ): MaiboardPanel {
+    return new MaiboardPanel(panel, context, api, state);
   }
 
   static open(
     context: vscode.ExtensionContext,
-    api: RamboardApi,
+    api: MaiboardApi,
     state: PanelState,
     column = vscode.ViewColumn.One,
-  ): RamboardPanel {
-    const panel = vscode.window.createWebviewPanel("maiboard.ramboard", state.title, column, {
+  ): MaiboardPanel {
+    const panel = vscode.window.createWebviewPanel("maiboard.panel", state.title, column, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "vendor", "ramboard")],
+      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "vendor", "board")],
     });
-    return new RamboardPanel(panel, context, api, state);
+    return new MaiboardPanel(panel, context, api, state);
   }
 
   static notifyTicketDataChanged(): void {
-    for (const panel of RamboardPanel.panels)
+    for (const panel of MaiboardPanel.panels)
       panel.panel.webview.postMessage({ type: "maiboard.changed" });
   }
 
   private render(): void {
-    const vendor = vscode.Uri.joinPath(this.context.extensionUri, "vendor", "ramboard");
+    const vendor = vscode.Uri.joinPath(this.context.extensionUri, "vendor", "board");
     const indexPath = join(vendor.fsPath, "index.html");
     if (!existsSync(indexPath)) {
       this.panel.webview.html =
-        "<body><h2>Ramboard assets missing</h2><p>Run <code>Maitake: Refresh Ramboard Assets</code>.</p></body>";
+        "<body><h2>Maiboard assets missing</h2><p>Run <code>Maitake: Refresh Maiboard Assets</code>.</p></body>";
       return;
     }
 
@@ -317,7 +317,7 @@ export class RamboardPanel {
   private openTicketInNewTab(message: { ticketId?: string }): void {
     if (!message.ticketId) return;
     const id = String(message.ticketId);
-    RamboardPanel.open(
+    MaiboardPanel.open(
       this.context,
       this.api,
       { title: `Maitake ${id}`, route: this.api.routeFor("ticket", id) },
@@ -350,7 +350,7 @@ export class RamboardPanel {
     const watchers: vscode.Disposable[] = [];
     const refresh = () => {
       if (this.debounce) clearTimeout(this.debounce);
-      this.debounce = setTimeout(() => RamboardPanel.notifyTicketDataChanged(), 250);
+      this.debounce = setTimeout(() => MaiboardPanel.notifyTicketDataChanged(), 250);
     };
     for (const folder of folders) {
       for (const pattern of [".git/{refs,logs}/**/*", ".git/packed-refs", ".maitake/**/*"]) {
@@ -369,7 +369,7 @@ export class RamboardPanel {
   }
 
   private dispose(): void {
-    RamboardPanel.panels.delete(this);
+    MaiboardPanel.panels.delete(this);
     if (this.debounce) clearTimeout(this.debounce);
     this.watcher?.dispose();
     for (const disposable of this.disposables) disposable.dispose();

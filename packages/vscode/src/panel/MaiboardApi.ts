@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { basename } from "node:path";
-import { mai, maiJson } from "./mai.ts";
+import { mai, maiJson } from "../mai/mai.ts";
 import {
   commitsAreContiguousFirstParent,
   getLog,
@@ -12,10 +12,10 @@ import {
   getRefs,
   type GitCommit,
   type GitRefs,
-} from "./git.ts";
-import { ViewStore } from "./views.ts";
-import { readReviewHandoff } from "./reviewHandoff.ts";
-import type { ProjectSummary, SavedView, Ticket, TicketSummary } from "./types.ts";
+} from "../git/git.ts";
+import { ViewStore } from "../mai/views.ts";
+import { readReviewHandoff } from "../review/reviewHandoff.ts";
+import type { ProjectSummary, SavedView, Ticket, TicketEvent, TicketSummary } from "@maiboard/api";
 
 interface ProjectWithPath extends ProjectSummary {
   path: string;
@@ -49,7 +49,7 @@ interface MaiStateSummary {
 }
 interface MaiState extends MaiStateSummary {
   body?: string;
-  events?: import("./types.ts").TicketEvent[];
+  events?: TicketEvent[];
 }
 
 export interface ApiResponse {
@@ -226,7 +226,7 @@ function ticketFromMai(state: MaiState, project: string): Ticket {
   };
 }
 
-export class RamboardApi {
+export class MaiboardApi {
   private readonly views: ViewStore;
 
   constructor(context: vscode.ExtensionContext) {

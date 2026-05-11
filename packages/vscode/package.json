@@ -1,14 +1,106 @@
 {
-  "name": "@maiboard/vscode",
+  "name": "maiboard",
   "displayName": "Maiboard",
   "version": "0.3.0",
   "private": false,
+  "description": "Maitake workbench for VS Code, powered by Maiboard.",
+  "categories": [
+    "Other"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pi0/maiboard"
+  },
+  "publisher": "pi0",
+  "files": [
+    "dist",
+    "vendor/board",
+    "README.md",
+    "LICENSE.txt",
+    "package.json"
+  ],
   "type": "module",
+  "main": "./dist/extension.cjs",
   "scripts": {
-    "build": "true",
-    "typecheck": "true",
-    "lint": "true",
-    "fmt": "true",
-    "package": "true"
+    "build:board": "bun run --filter @maiboard/board build",
+    "refresh-board": "rm -rf vendor/board && mkdir -p vendor/board && cp -R ../board/dist/. vendor/board/",
+    "build:extension": "rolldown -c rolldown.config.ts",
+    "build": "bun run build:board && bun run refresh-board && bun run build:extension",
+    "dev": "rolldown -c rolldown.config.ts -w",
+    "typecheck": "tsgo --noEmit --skipLibCheck",
+    "fmt": "oxlint src rolldown.config.ts --fix && oxfmt src rolldown.config.ts package.json tsconfig.json README.md",
+    "lint": "oxlint src rolldown.config.ts && oxfmt --check src rolldown.config.ts package.json tsconfig.json README.md",
+    "package": "bun run build && bunx vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@maiboard/api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.110.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260320.1",
+    "@vscode/vsce": "^3.7.1",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
+    "rolldown": "^1.0.0-rc.10",
+    "typescript": "^5.9.3"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "maiboard.openBoard",
+        "title": "Maitake: Open Board"
+      },
+      {
+        "command": "maiboard.openTickets",
+        "title": "Maitake: Open Tickets"
+      },
+      {
+        "command": "maiboard.openTicket",
+        "title": "Maitake: Open Ticket"
+      },
+      {
+        "command": "maiboard.startReview",
+        "title": "Maitake: Start Review"
+      },
+      {
+        "command": "maiboard.openReview",
+        "title": "Open Review",
+        "category": "Maitake"
+      },
+      {
+        "command": "maiboard.maiCommentList",
+        "title": "Maitake: List @mai: Tickets"
+      },
+      {
+        "command": "maiboard.maiCommentResolve",
+        "title": "Maitake: Resolve @mai: at Cursor"
+      },
+      {
+        "command": "maiboard.openReviewHandoff",
+        "title": "Open Review Handoff",
+        "category": "Maitake"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "maiboard.openTicket",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      },
+      {
+        "command": "maiboard.startReview",
+        "key": "ctrl+shift+r"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "onUri",
+    "onWebviewPanel:maiboard.panel"
+  ],
+  "engines": {
+    "vscode": "^1.110.0"
   }
 }
