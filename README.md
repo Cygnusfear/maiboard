@@ -57,13 +57,13 @@ bun run package:vscode
 
 ## Packages
 
-| Package                       | Description                                                                          |
-| ----------------------------- | ------------------------------------------------------------------------------------ |
-| [`packages/board`](packages/board)     | Vite + React board UI (List / Board / Graph views).                                  |
-| [`packages/server`](packages/server)   | Bun HTTP API server. Shells out to `mai` for ticket reads/writes.                    |
-| [`packages/cli`](packages/cli)         | `mai-board` binary. Direct launcher and the `mai board` plugin entry are the same. |
-| [`packages/api`](packages/api)         | Shared TypeScript-only route/domain types. Zero runtime deps.                        |
-| [`packages/vscode`](packages/vscode)   | VS Code / Codium extension (`pi0.maiboard`). Reimplements the API in-process.        |
+| Package                              | Description                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------- |
+| [`packages/board`](packages/board)   | Vite + React board UI (List / Board / Graph views).                                |
+| [`packages/server`](packages/server) | Bun HTTP API server. Shells out to `mai` for ticket reads/writes.                  |
+| [`packages/cli`](packages/cli)       | `mai-board` binary. Direct launcher and the `mai board` plugin entry are the same. |
+| [`packages/api`](packages/api)       | Shared TypeScript-only route/domain types. Zero runtime deps.                      |
+| [`packages/vscode`](packages/vscode) | VS Code / Codium extension (`pi0.maiboard`). Reimplements the API in-process.      |
 
 ## VS Code / Codium packaging
 
