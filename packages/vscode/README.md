@@ -4,6 +4,8 @@ Maiboard embeds the shared Maiboard board UI inside a VS Code webview and serves
 
 Runtime package identity: `pi0.maiboard`.
 
+See the [main Maiboard repository](https://github.com/Cygnusfear/maiboard) for the rest of the workspace (board UI, server, `mai-board` launcher).
+
 ## Build
 
 ```bash

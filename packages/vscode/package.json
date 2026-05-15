@@ -17,7 +17,7 @@
     "dist",
     "vendor/board",
     "README.md",
-    "LICENSE.txt",
+    "LICENSE",
     "package.json"
   ],
   "type": "module",
