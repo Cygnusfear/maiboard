@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/board.png" alt="Maiboard — Maitake Board inside VS Code" width="85%">
+  <img src="docs/hero.png" alt="Maiboard — list, kanban board, and review side-by-side inside VS Code" width="95%">
 </p>
 
 <h1 align="center">🍄‍🟫 maiboard</h1>
