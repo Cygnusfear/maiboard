@@ -4,7 +4,7 @@
 
 <h1 align="center">🍄‍🟫 maiboard</h1>
 
-<p align="center"><strong>A visual board and review workbench for <a href="https://github.com/Cygnusfear/maitake">Maitake</a>. Markdown-native tickets, drag-and-drop kanban, in-editor reviews.</strong></p>
+<p align="center"><strong>A Linear-style board for <a href="https://github.com/Cygnusfear/maitake">Maitake</a>.</strong><br/>Browser or VS Code. Same tickets, same git notes, your repo.</p>
 
 <p align="center">
   <a href="#features">Features</a> ·
@@ -15,7 +15,11 @@
 
 ---
 
-**maiboard** is a Bun workspace that ships a VS Code/Codium extension, a standalone web board, and a `mai board` plugin. All three read the same `.tickets/` directory `mai` writes — every drag, edit, or review verdict is still a plain-text commit in your repo.
+[Maitake](https://github.com/Cygnusfear/maitake) gives you tickets, reviews, PRs, and docs — all stored as git notes. `maiboard` is the visual layer: a Linear-style board for the same data, in the browser or inside VS Code.
+
+Drag tickets across status columns. Group by epic. Review code in-editor with file diffs and a verdict button. Every change goes through `mai` and lands in `refs/notes/maitake` — append-only, mergeable, in your repo.
+
+Two surfaces, one backend. Open the browser board via `mai-board`, or install the `pi0.maiboard` extension in VS Code / VSCodium. Both surfaces compute live from `mai`. The same project shows the same state in both.
 
 > **Status:** early. APIs and storage are still moving. Run it from this monorepo for now.
 
